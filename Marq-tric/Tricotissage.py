@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import pandas as pd  
+import pandas as pd
+import sys
 
 # Lire le fichier Excel 
 
-excel_file = "test-tricotissage.xlsx" #"chemin_d'acces_a_l'Excel" 
+if len(sys.argv) > 1:
+    excel_file = sys.argv[1]
+else:
+    excel_file = "test-tricotissage.xlsx" 
 
 df = pd.read_excel(excel_file)  
 
 # Ouvrir un fichier pour ecrire le G-code 
 
-output_file = "tricotissage.gcode" 
+output_file = f"{excel_file}.gcode"
+
+dim_x, dim_y = 1000, 500
 
 with open(output_file, "w") as file: 
 
@@ -25,7 +31,7 @@ with open(output_file, "w") as file:
     
     file.write("G40 \nG49 \n") 
     
-    file.write("G0 1000 500\n \n") #ou x et y sont les dimensions de la surface de travail apres calibration
+    file.write(f"G0 X{dim_x} Y{dim_y}\n \n") #ou x et y sont les dimensions de la surface de travail apres calibration
     
     position = 0 #position des buses pour les aiguilles  3 premieres colonnes
     
@@ -211,7 +217,11 @@ with open(output_file, "w") as file:
                                  
                                  file.write("G0 X{} Y{}\n".format(X2 - 5 + 9.9, tableau[10]-abs((tableau[10]-tableau[4])/2)))
                                  
-                                 file.write("G2 X{} Y{} I{} J{}\n".format(X2 - 5 + 9.9, tableau[10]+abs((tableau[10]-tableau[4])/2), 5, abs((tableau[10]-tableau[4])/2)))
+                                 file.write("G2 X{} Y{} I{} J{}\n"
+                                            .format(X2 - 5 + 9.9, 
+                                                    tableau[10]+abs((tableau[10]-tableau[4])/2), 
+                                                    5, 
+                                                    abs((tableau[10]-tableau[4])/2)))
                                  
                                  file.write("G0 X{} Y{}\n \n".format(X1 + 5 + 9.9, tableau[10]+abs((tableau[10]-tableau[4])/2)))
                            
@@ -233,7 +243,9 @@ with open(output_file, "w") as file:
                                                     
                             if (position2==0)and(y <= tableau[4])and(Y1!=Y2):
                                
-                               file.write("G0 X{} Y{}\n".format(X1+abs((X1-X2)/2)+9.9, Y2-abs((tableau[10]-tableau[4])/2)))
+                               file.write("G0 X{} Y{}\n"
+                                          .format(X1+abs((X1-X2)/2)+9.9, 
+                                                  Y2-abs((tableau[10]-tableau[4])/2)))
                                
                                file.write("G0 X{} Y{}\n".format(X1+abs((X1-X2)/2)+9.9, Y1+abs((tableau[10]-tableau[4])/2)))
                                
@@ -261,7 +273,11 @@ with open(output_file, "w") as file:
                                
                                 file.write("G0 X{} Y{}\n".format(X1+abs((X1-X2)/2)+9.9, Y2-abs((tableau[10]-tableau[4])/2)))
                                
-                                file.write("G2 X{} Y{} I{} J{}\n".format(X1-abs((X1-X2)/2)+9.9, Y2-abs((tableau[10]-tableau[4])/2), -abs((X1-X2)/2), abs((tableau[10]-tableau[4])/2)))
+                                file.write("G2 X{} Y{} I{} J{}\n"
+                                           .format(X1-abs((X1-X2)/2)+9.9,
+                                                   Y2-abs((tableau[10]-tableau[4])/2), 
+                                                   -abs((X1-X2)/2), 
+                                                   abs((tableau[10]-tableau[4])/2)))
                                
                                 file.write("G0 X{} Y{}\n \n".format(X1-abs((X1-X2)/2)+9.9, Y1+abs((tableau[10]-tableau[4])/2)))
                                 
@@ -295,6 +311,6 @@ with open(output_file, "w") as file:
                      
                 file.write(";MSG Decouper le fil \n \n")
                 
-                file.write("G0 Xx Yy\n \n") #ou x et y sont les dimensions de la surface de travail apres calibration
+                file.write(f"G0 X{dim_x} Y{dim_y}\n \n") #ou x et y sont les dimensions de la surface de travail apres calibration
     
 print("Fichier G-code genere avec succes.") 

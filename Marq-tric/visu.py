@@ -7,33 +7,40 @@ import sys
 def parse_gcode(gcode):
     """Parse le G-code et retourne une liste de mouvements."""
     mouvements = []
-    x, y = 0, 0  # Position initiale
+    x, y = None, None  # Position initiale
     for ligne in gcode.splitlines():
         ligne = ligne.strip()
         if ligne.startswith('G0'):
             match = re.match(r'G0\s+X([\d.-]+)\s+Y([\d.-]+)', ligne)
             if match:
                 new_x, new_y = float(match.group(1)), float(match.group(2))
-                mouvements.append({'type': 'G0', 'x1': x, 'y1': y, 'x2': new_x, 'y2': new_y})
+                if x is not None:
+                    mouvements.append({'type': 'G0', 'x1': x, 'y1': y, 'x2': new_x, 'y2': new_y})
                 x, y = new_x, new_y
             else:
                 match = re.match(r'G0\s+Y([\d.-]+)', ligne)
                 if match:
                     new_y = float(match.group(1))
-                    mouvements.append({'type': 'G0', 'x1': x, 'y1': y, 'x2': x, 'y2': new_y})
+                    if y is not None:
+                        mouvements.append({'type': 'G0', 'x1': x, 'y1': y, 'x2': x, 'y2': new_y})
                     y = new_y
                 else:
                     match = re.match(r'G0\s+X([\d.-]+)', ligne)
                     if match:
                         new_x = float(match.group(1))
-                        mouvements.append({'type': 'G0', 'x1': x, 'y1': y, 'x2': new_x, 'y2': y})
+                        if x is not None:
+                            mouvements.append({'type': 'G0', 'x1': x, 'y1': y, 'x2': new_x, 'y2': y})
                         x = new_x
+                    else:
+                        print("Ne matche pas G0 >> " + ligne)
         elif ligne.startswith('G2'):
             match = re.match(r'G2\s+X([\d.-]+)\s+Y([\d.-]+)\s+I([\d.-]+)\s+J([\d.-]+)', ligne)
             if match:
                 new_x, new_y, i, j = map(float, match.groups())
                 mouvements.append({'type': 'G2', 'x1': x, 'y1': y, 'x2': new_x, 'y2': new_y, 'i': i, 'j': j})
                 x, y = new_x, new_y
+            else:
+                print("Ne matche pas >> G2" + ligne)
     print(json.dumps(mouvements, indent=4, sort_keys=True))
     return mouvements
 
