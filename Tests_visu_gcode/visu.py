@@ -58,7 +58,7 @@ def plot_gcode(mouvements):
     for mouvement in mouvements:
         if mouvement['type'] == 'G0':
             plt.plot([mouvement['x1'], mouvement['x2']], [mouvement['y1'], mouvement['y2']], 'b--', label='G0' if 'G0' not in plt.gca().get_legend_handles_labels()[1] else "") # bleu pointillé
-        elif mouvement['type'] == 'G2': #Modifier sens de rotation pour G2
+        elif mouvement['type'] == 'G2':
             centre_x = mouvement['x1'] + mouvement['i']
             centre_y = mouvement['y1'] + mouvement['j']
             rayon = ((mouvement['i'])**2 + (mouvement['j'])**2)**0.5
