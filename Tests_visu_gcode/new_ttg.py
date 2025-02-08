@@ -23,11 +23,6 @@ V3. Proposer une résolution automatique : couper en plusieurs étapes
 import yaml
 import sys
 
-if len(sys.argv) > 1:
-    yamlFile = sys.argv[1]
-else:
-    yamlFile = "file.yaml"
-
 
 def enTete(dim_y, dim_z):
     return f'''G21 ; Definir les unites en millimetres
@@ -50,6 +45,7 @@ def G3(y, z, cy, cz): #Aller à (y,z) en arc de cercle horaire de centre (cy,cz)
     #Vérifier validité du cercle
     return f"G3...\n" #À écrire
 
+
 def marquage(yamlFile):
     with open(yamlFile,'r') as file:
         data = yaml.safe_load(file)
@@ -62,6 +58,7 @@ def marquage(yamlFile):
                 marq.write("M0\n") #Pause
                 #descendre et relever crayon
     print(f"Fichier {data['nom']}.gcode généré avec succès")
+
 
 def tricotissage(yamlFile):
     #Ouverture fichier de données
@@ -80,6 +77,11 @@ def tricotissage(yamlFile):
         #Dernier point : tour complet, transition entre groupes ?
 
 
-
-marquage(yamlFile)
+if __name__ == "__main__":
+    if sys.argv[1][0] == 'm':
+        if len(sys.argv) > 2:
+            yamlFile = sys.argv[1]
+        else:
+            yamlFile = "file.yaml"
+        marquage(yamlFile)
 
