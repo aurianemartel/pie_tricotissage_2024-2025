@@ -64,6 +64,8 @@ def tricotissage(yamlFile):
     #Ouverture fichier de données
     with open(yamlFile,'r') as file:
         data = yaml.safe_load(file)
+
+    
     #Ouverture fichier gcode à écrire
     #Boucle sur les liens : entre quels groupes je tricotisse
         #Premier point : tour complet autour de l'aiguille

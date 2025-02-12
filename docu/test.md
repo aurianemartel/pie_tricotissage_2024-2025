@@ -1,0 +1,55 @@
+# UML example
+Ceci est un exemple:
+
+```plantuml
+@startuml
+Bob -> Alice : hello
+@enduml
+```
+Et j'ai même plus de doc:
+```plantuml
+@startuml
+skinparam responseMessageBelowArrow true
+skinparam sequenceMessageAlign center
+
+participant tricotissage as tric
+database "fichier \npatron" as yaml
+database "instructions \ngcode" as gcode
+
+== Loading data ==
+tric -> yaml
+activate yaml
+tric <- yaml : données
+deactivate yaml
+
+tric -> parcours : données
+tric <- parcours : trajet (liste de points)
+    
+== Writing gcode ==
+tric -> gcode : open
+activate gcode
+group en-tête
+    tric -> enTete
+    enTete -> tric
+    gcode <-- tric : écrit l'en-tête
+    end
+group chemin
+    tric -> trace
+    loop pour chaque point du trajet,\n sauf les 2 derniers
+        trace -> 3pts
+        trace <- 3pts : points pivots
+        trace -> G0
+        trace <- G0 : aller au 1er pt pivot
+        trace --> G2
+        trace <-- G2
+        trace --> G3 : or
+        trace <-- G3 : aller au 2e pt pivot
+        
+        end
+    tric <- trace : renvoie le chemin sous forme de string
+    gcode <-- tric : écrit le chemin 
+    end
+tric <- gcode : close
+deactivate gcode
+@enduml
+```
