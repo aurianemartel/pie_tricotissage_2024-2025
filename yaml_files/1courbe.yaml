@@ -1,10 +1,9 @@
 nom: essai
 dimensions:
-  - 400
+  - 350
   - 600
 liens:
   - ["groupe1","groupe2"]
-  - ["groupe3","groupe4"]
 groupes:
   groupe1:
     - [100,100]
@@ -14,3 +13,5 @@ groupes:
   groupe2:
     - [100,200]
     - [120,200]
+    - [140,200]
+    - [160,200]

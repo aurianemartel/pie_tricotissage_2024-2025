@@ -2,6 +2,7 @@
 Ceci est un exemple:
 
 This is good:
+
 ![bug](../out/docu/test/test.png)
 
 ```plantuml
