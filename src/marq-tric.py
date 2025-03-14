@@ -212,13 +212,13 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1][0] == 'm':
             if len(sys.argv) > 2:
-                yamlFile = PATH_YAML + sys.argv[1]
+                yamlFile = PATH_YAML + sys.argv[2]
             else:
                 yamlFile = PATH_YAML + "file.yaml"
             marquage(yamlFile)
         elif sys.argv[1][0] == 't':
             if len(sys.argv) > 2:
-                yamlFile = PATH_YAML + sys.argv[1]
+                yamlFile = PATH_YAML + sys.argv[2]
             else:
                 yamlFile = PATH_YAML + "file.yaml"
             tricotissage(yamlFile)
