@@ -33,6 +33,7 @@ G0 Y{dim_y} Z0
 G0 Y{dim_y} Z{dim_z}
 G0 Y0 Z{dim_z}
 G0 Y0 Z0
+
 '''
 
 '''
@@ -80,7 +81,7 @@ def marquage(yamlFile):
             for point in data['groupes'][groupe]:
                 marq.write(G0(point[0], point[1]))
                 #marq.write("M3\nG4 P1 \nM5\n\n") #descendre et relever crayon
-                marq.write("M0\n\n")
+                marq.write("\nM0\n\n")
     print(f"Fichier marq_{data['nom']}.gcode généré avec succès")
 
 '''
@@ -166,6 +167,7 @@ def trace(prc):
     sens = sens_arc(u,v)
     chemin += f'''{G0(pp1[0],pp1[1])}
 M0
+
 {G23(pp1[0],pp1[1],pp1[0],pp1[1],prc[0][0],prc[0][1],sens)}
 '''
     # Boucle sur le parcours
@@ -174,6 +176,7 @@ M0
         pp1, pp2, sens = pointsPassage(prc[i],prc[i+1],prc[i+2])
         chemin += f'''{G1(pp1[0],pp1[1])}
 {G23(pp1[0],pp1[1],pp2[0],pp2[1],prc[i+1][0],prc[i+1][1],sens)}
+
 '''        
     #Finaliser le tricotissage : gestion du dernier point
     u = vect(prc[l-4],prc[l-1])
