@@ -26,9 +26,14 @@ G90 ; Positionnement absolu
 G19 ; YZ plan
 G40
 G49
-F1000
+F10000
 
 G0 Y0 Z0
+
+'''
+
+
+'''
 G0 Y{dim_y} Z0
 G0 Y{dim_y} Z{dim_z}
 G0 Y0 Z{dim_z}
