@@ -156,8 +156,8 @@ def pointsPassage(pt1, pt2, pt3, epsilon):
     #pp2 = [pt2[0] + epsilon*u[0]/norme(u), pt2[1] + epsilon*u[1]/norme(u)]
     #pp1 = [pt2[0] - epsilon*v[0]/norme(v), pt2[1] - epsilon*v[1]/norme(v)]
 
-    pp1 = [pt2[0] + sens*(-1)*epsilon*u[1]/norme(u), pt2[1] + sens*epsilon*u[0]/norme(u)]
-    pp2 = [pt2[0] + sens*(-1)*epsilon*v[1]/norme(v), pt2[1] + sens*epsilon*v[0]/norme(v)]
+    pp1 = [pt2[0] + sens*epsilon*u[1]/norme(u), pt2[1] + sens*(-1)*epsilon*u[0]/norme(u)]
+    pp2 = [pt2[0] + sens*epsilon*v[1]/norme(v), pt2[1] + sens*(-1)*epsilon*v[0]/norme(v)]
 
     return pp1, pp2, sens
 
