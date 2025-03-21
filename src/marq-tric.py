@@ -143,25 +143,105 @@ def sens_arc(u,v):
         print("Problème : vecteurs colinéaires\n")
     return sens
 
+def cercle_intersection(c, r, p1, p2):
+    """
+    Détermine s'il y a intersection entre une droite (définie par p1 et p2) et un cercle (défini par son centre c et son rayon r).
+    """
+    # Vecteur directeur de la droite normalisé
+    d = vect(p1, p2)
+    d_norm = norme(d)
+    d = [d[0]/d_norm, d[1]/d_norm]
+    
+    # Vecteur allant du centre du cercle au premier point
+    f = vect(c, p1)
+    
+    # Equation quadratique
+    a = 1  
+    b = 2 * (d[0] * f[0] + d[1] * f[1])
+    c_val = f[0]**2 + f[1]**2 - r**2
+    
+    discriminant = b**2 - 4 * a * c_val
+    
+    if discriminant < 0:
+        # Pas d'intersection
+        return False, []
+    
+    # Calculer les solutions
+    t1 = (-b + discriminant**0.5) / (2 * a)
+    t2 = (-b - discriminant**0.5) / (2 * a)
+    
+    # Vérifier si les intersections sont sur le segment
+    segment_length = norme(vect(p1, p2))
+    intersections = []
+    
+    # Calculer les points d'intersection
+    if 0 <= t1 <= segment_length:
+        intersection1 = [p1[0] + t1 * d[0], p1[1] + t1 * d[1]]
+        intersections.append(intersection1)
+    
+    if 0 <= t2 <= segment_length and discriminant > 0:  # Éviter les doublons si discriminant = 0
+        intersection2 = [p1[0] + t2 * d[0], p1[1] + t2 * d[1]]
+        intersections.append(intersection2)
+    
+    return len(intersections) > 0, intersections
 
-def pointsPassage(pt1, pt2, pt3, epsilon):
+def premiere_intersection(p1, aiguille_arrivee,aiguille_actuelle,liste_aiguilles,epsilon):
+    intersection_trouvee = False
+    aiguille_intersection = None
+    for aiguille in liste_aiguilles :
+        if aiguille != aiguille_actuelle and aiguille != aiguille_arrivee:
+            resultat, intersections = cercle_intersection(aiguille, epsilon, p1, aiguille_arrivee) # 0.99 pour éviter de considérer un contact avec les aiguilles de p1 et aiguille_arrivee
+            if resultat :
+                distance = min([norme(vect(p1,intersections[i])) for i in range(len(intersections))])
+                if intersection_trouvee == False or distance < min_distance:
+                    intersection_trouvee = True
+                    min_distance = distance
+                    aiguille_intersection = aiguille
+    if intersection_trouvee:
+        print(f"je suis le segment {p1} -> {aiguille_arrivee}")
+        print(f"Intersection trouvée : {intersection_trouvee} avec {aiguille_intersection}")
+        print(f"Distance : {min_distance}")
+        print(f"fonction appelée avec {aiguille_arrivee} et {aiguille_actuelle}, p1 = {p1}")
+    return intersection_trouvee, aiguille_intersection
+
+def pointsPassage(pt1, pt2, pt3, epsilon,debut_normal=1, fin_normal=1):
     """Retourne les points par lesquels passer pour contourner pt2 vers pt3, 
-        et le sens de l'arc de cercle entre ces points"""
+        et le sens de l'arc de cercle entre ces points.
+        Si debut_normal ou fin_normal sont à -1, c'est quon contourne une interseciton
+        alors le premier ou le deuxième point de passage sera dans l'autre sens """
     assert (pt1 != pt2) & (pt1 != pt3) & (pt2 != pt3)
     
     u = vect(pt1,pt2)
     v = vect(pt2,pt3)
     sens = sens_arc(u,v)
 
+    sens_debut = debut_normal*sens # Sens de l'arc actuel
+    sens_fin = fin_normal*sens # Sens d'approche du prochain arc
+
     #pp2 = [pt2[0] + epsilon*u[0]/norme(u), pt2[1] + epsilon*u[1]/norme(u)]
     #pp1 = [pt2[0] - epsilon*v[0]/norme(v), pt2[1] - epsilon*v[1]/norme(v)]
 
-    pp1 = [pt2[0] + sens*epsilon*u[1]/norme(u), pt2[1] + sens*(-1)*epsilon*u[0]/norme(u)]
-    pp2 = [pt2[0] + sens*epsilon*v[1]/norme(v), pt2[1] + sens*(-1)*epsilon*v[0]/norme(v)]
+    pp1 = [pt2[0] + sens_debut*epsilon*u[1]/norme(u), pt2[1] + sens_debut*(-1)*epsilon*u[0]/norme(u)]
+    pp2 = [pt2[0] + sens_fin*epsilon*v[1]/norme(v), pt2[1] + sens_fin*(-1)*epsilon*v[0]/norme(v)]
 
-    return pp1, pp2, sens
+    return pp1, pp2, sens_debut
 
-def trace(prc, epsilon):
+
+def itineraire(prc, i, epsilon, liste_aiguilles):
+    trajet = []
+    pp1, pp2, sens = pointsPassage(prc[i],prc[i+1],prc[i+2], epsilon)
+    intersection_trouvee, aiguille_intersection = premiere_intersection(pp2,prc[i+2], prc[i+1],liste_aiguilles,epsilon)
+    while intersection_trouvee :
+        pp1,pp2,sens = pointsPassage(prc[i],prc[i+1],aiguille_intersection, epsilon, debut_normal=1, fin_normal=-1)
+        trajet.append([pp1,pp2,sens])
+        pp1,pp2,sens = pointsPassage(prc[i+1],aiguille_intersection,prc[i+2], epsilon, debut_normal=-1, fin_normal=1)
+        intersection_trouvee, aiguille_intersection = premiere_intersection(pp2,prc[i+2],prc[i+1],liste_aiguilles,epsilon)
+    trajet.append([pp1,pp2,sens])
+    return trajet
+
+
+
+def trace(prc, epsilon,liste_aiguilles):
     chemin = ""
     # Initialiser le tricotissage : cercle autour de la première aiguille
     u = vect(prc[3],prc[0])
@@ -174,13 +254,20 @@ M0
 {G23(pp1[0],pp1[1],pp1[0],pp1[1],prc[0][0],prc[0][1],sens)}
 '''
     # Boucle sur le parcours
+    # On va d'abord stocker les points de passage dans une liste
+    trajet = []
     l = len(prc)
     for i in range(l-2):
-        pp1, pp2, sens = pointsPassage(prc[i],prc[i+1],prc[i+2], epsilon)
+        trajet += itineraire(prc, i , epsilon, liste_aiguilles)
+        
+    # on enregistre dans le g-code le trajet
+    for arc in trajet:
+        pp1, pp2, sens = arc
         chemin += f'''{G1(pp1[0],pp1[1])}
 {G23(pp1[0],pp1[1],pp2[0],pp2[1],prc[i+1][0],prc[i+1][1],sens)}
 
-'''        
+'''     
+
     #Finaliser le tricotissage : gestion du dernier point
     u = vect(prc[l-4],prc[l-1])
     v = vect(prc[l-2],prc[l-1])
@@ -204,7 +291,8 @@ def tricotissage(yamlFile):
         for lien in data['liens']:
             # Création du parcours de tricotissage
             prc = parcours(data["groupes"][lien[0]],data["groupes"][lien[1]])
-            tric.write(trace(prc, epsilon))
+            liste_aiguilles = data["groupes"][lien[0]] + data["groupes"][lien[1]]
+            tric.write(trace(prc, epsilon,liste_aiguilles))
 
     print(f"Fichier tric_{data['nom']}.gcode généré avec succès")
 
