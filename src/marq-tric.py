@@ -59,9 +59,9 @@ def G3(yi,zi,yf,zf,cy,cz): #Aller à (y,z) en arc de cercle horaire de centre (c
 
 def G23(yi,zi,yf,zf,cy,cz,sens):
     """Retourne le résultat de G2 ou G3 selon le sens de rotation nécessaire"""
-    if sens == "indirect":
+    if sens == -1: # sens indirect
         return G2(yi,zi,yf,zf,cy,cz)
-    elif sens == "direct":
+    elif sens == 1: # sens direct
         return G3(yi,zi,yf,zf,cy,cz)
     else :
         print("Problème : sens non valide")
@@ -135,11 +135,11 @@ def norme(u):
 
 def sens_arc(u,v):
     if u[0]*v[1]-u[1]*v[0] > 0:
-        sens = "direct"
+        sens = 1 # sens direct
     elif u[0]*v[1]-u[1]*v[0] < 0:
-        sens = "indirect"
+        sens = -1 # sens indirect
     else :
-        sens = ""
+        sens = 0
         print("Problème : vecteurs colinéaires\n")
     return sens
 
@@ -148,18 +148,16 @@ def pointsPassage(pt1, pt2, pt3, epsilon):
     """Retourne les points par lesquels passer pour contourner pt2 vers pt3, 
         et le sens de l'arc de cercle entre ces points"""
     assert (pt1 != pt2) & (pt1 != pt3) & (pt2 != pt3)
-
-    #print(f"pt1:{pt1}, pt2:{pt2}, pt3:{pt3}\n")
     
     u = vect(pt1,pt2)
     v = vect(pt2,pt3)
-    #print(f"u:{u}, nu:{norme(u)}, v:{v}, nv:{norme(v)}\n")
-
-    pp2 = [pt2[0] + epsilon*u[0]/norme(u), pt2[1] + epsilon*u[1]/norme(u)]
-    pp1 = [pt2[0] - epsilon*v[0]/norme(v), pt2[1] - epsilon*v[1]/norme(v)]
-
     sens = sens_arc(u,v)
-    #print(f"pp1:{pp1}, pp2:{pp2}, sens:{sens}\n")
+
+    #pp2 = [pt2[0] + epsilon*u[0]/norme(u), pt2[1] + epsilon*u[1]/norme(u)]
+    #pp1 = [pt2[0] - epsilon*v[0]/norme(v), pt2[1] - epsilon*v[1]/norme(v)]
+
+    pp1 = [pt2[0] + sens*(-1)*epsilon*u[1]/norme(u), pt2[1] + sens*epsilon*u[0]/norme(u)]
+    pp2 = [pt2[0] + sens*(-1)*epsilon*v[1]/norme(v), pt2[1] + sens*epsilon*v[0]/norme(v)]
 
     return pp1, pp2, sens
 
