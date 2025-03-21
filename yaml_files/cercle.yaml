@@ -2,6 +2,7 @@ nom: cercle
 dimensions:
   - 350
   - 600
+epsilon: 20
 liens:
   - ["groupe1","groupe2"]
 groupes:

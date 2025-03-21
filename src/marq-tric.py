@@ -18,7 +18,7 @@ import sys
 
 PATH_OUT = "../prgs_gcode/"
 PATH_YAML = "../yaml_files/"
-EPSILON = 10         # Distance aux aiguilles des points de passages, en y et en z
+EPSILON = 20         # Distance aux aiguilles des points de passages, en y et en z
 
 def enTete(dim_y, dim_z):
     return f'''G21 ; Definir les unites en millimetres
@@ -144,7 +144,7 @@ def sens_arc(u,v):
     return sens
 
 
-def pointsPassage(pt1, pt2, pt3):
+def pointsPassage(pt1, pt2, pt3, epsilon):
     """Retourne les points par lesquels passer pour contourner pt2 vers pt3, 
         et le sens de l'arc de cercle entre ces points"""
     assert (pt1 != pt2) & (pt1 != pt3) & (pt2 != pt3)
@@ -155,20 +155,20 @@ def pointsPassage(pt1, pt2, pt3):
     v = vect(pt2,pt3)
     #print(f"u:{u}, nu:{norme(u)}, v:{v}, nv:{norme(v)}\n")
 
-    pp2 = [pt2[0] + EPSILON*u[0]/norme(u), pt2[1] + EPSILON*u[1]/norme(u)]
-    pp1 = [pt2[0] - EPSILON*v[0]/norme(v), pt2[1] - EPSILON*v[1]/norme(v)]
+    pp2 = [pt2[0] + epsilon*u[0]/norme(u), pt2[1] + epsilon*u[1]/norme(u)]
+    pp1 = [pt2[0] - epsilon*v[0]/norme(v), pt2[1] - epsilon*v[1]/norme(v)]
 
     sens = sens_arc(u,v)
     #print(f"pp1:{pp1}, pp2:{pp2}, sens:{sens}\n")
 
     return pp1, pp2, sens
 
-def trace(prc):
+def trace(prc, epsilon):
     chemin = ""
     # Initialiser le tricotissage : cercle autour de la première aiguille
     u = vect(prc[3],prc[0])
     v = vect(prc[0],prc[1])
-    pp1 = [prc[0][0] + EPSILON*u[0]/norme(u), prc[0][1] + EPSILON*u[1]/norme(u)]
+    pp1 = [prc[0][0] + epsilon*u[0]/norme(u), prc[0][1] + epsilon*u[1]/norme(u)]
     sens = sens_arc(u,v)
     chemin += f'''{G0(pp1[0],pp1[1])}
 M0
@@ -178,7 +178,7 @@ M0
     # Boucle sur le parcours
     l = len(prc)
     for i in range(l-2):
-        pp1, pp2, sens = pointsPassage(prc[i],prc[i+1],prc[i+2])
+        pp1, pp2, sens = pointsPassage(prc[i],prc[i+1],prc[i+2], epsilon)
         chemin += f'''{G1(pp1[0],pp1[1])}
 {G23(pp1[0],pp1[1],pp2[0],pp2[1],prc[i+1][0],prc[i+1][1],sens)}
 
@@ -186,7 +186,7 @@ M0
     #Finaliser le tricotissage : gestion du dernier point
     u = vect(prc[l-4],prc[l-1])
     v = vect(prc[l-2],prc[l-1])
-    pp1 = [prc[l-1][0] + EPSILON*u[0]/norme(u), prc[l-1][1] + EPSILON*u[1]/norme(u)]
+    pp1 = [prc[l-1][0] + epsilon*u[0]/norme(u), prc[l-1][1] + epsilon*u[1]/norme(u)]
     sens = sens_arc(u,v)
     chemin += f'''{G1(pp1[0],pp1[1])}
 {G23(pp1[0],pp1[1],pp1[0],pp1[1],prc[l-1][0],prc[l-1][1],sens)}
@@ -198,6 +198,7 @@ def tricotissage(yamlFile):
     with open(yamlFile,'r') as file:
         data = yaml.safe_load(file)
     dim_y, dim_z = data['dimensions']
+    epsilon = data['epsilon']
     
     with open(PATH_OUT + f"tric_{data['nom']}.gcode",'w') as tric:
         tric.write(enTete(dim_y,dim_z))
@@ -205,7 +206,7 @@ def tricotissage(yamlFile):
         for lien in data['liens']:
             # Création du parcours de tricotissage
             prc = parcours(data["groupes"][lien[0]],data["groupes"][lien[1]])
-            tric.write(trace(prc))
+            tric.write(trace(prc, epsilon))
 
     print(f"Fichier tric_{data['nom']}.gcode généré avec succès")
 
