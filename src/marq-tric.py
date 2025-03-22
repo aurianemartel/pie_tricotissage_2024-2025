@@ -244,7 +244,7 @@ M0
         pp1, pp2, sens = pointsPassage(prc[i],prc[i+1],prc[i+2], epsilon)
         intersection_trouvee, aiguille_intersection, intersections = premiere_intersection(p_prec,pp1,prc[i],prc[i+1],liste_aiguilles,epsilon)
         # On calcule la normale
-        if intersection_trouvee:
+        while intersection_trouvee:
             if len(intersections) == 1:
                 pp_intersection = intersections[0]
             else : # il y a deux points d'intersection avec le cercle
@@ -253,6 +253,10 @@ M0
                 vecteur = [c_i1[0] + c_i2[0], c_i1[1] + c_i2[1]]
                 # On normalise le vecteur
                 norme_vecteur = norme(vecteur)
+
+                if norme_vecteur==0:
+                    print("Problème : vecteur nul") # TODO
+                    break
 
                 pp_intersection = [aiguille_intersection[0]+epsilon*vecteur[0]/norme_vecteur,aiguille_intersection[1]+epsilon*vecteur[1]/norme_vecteur]
 
@@ -270,6 +274,9 @@ M0
             print(f"nb dintersections : {len(intersections)}, point de passage : {pp_intersection}")
             
             chemin += f"{G1(pp_intersection[0],pp_intersection[1])}\n"
+            p_prec = pp_intersection
+            intersection_trouvee, aiguille_intersection, intersections = premiere_intersection(p_prec,pp1,aiguille_intersection,prc[i+1],liste_aiguilles,epsilon)
+
         # On continue notre trajet (on ne consièdere pas plus de 1 intersection)
         # Et c'est pas encore satisfaisant car si le epsilonest trop grand on passe de l'autre coté du cercle..
         chemin += f'''{G1(pp1[0],pp1[1])}
