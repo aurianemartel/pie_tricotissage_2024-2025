@@ -1,0 +1,22 @@
+@startuml
+start
+:Sélection image;
+#LightBlue:Détection des courbes
+ => //Partie 1 programme Élodie//;
+:Edition format image;
+note right: - zoom \n- offset \n- inversion x-y
+:Choix nombre aiguilles 
+pour chaque groupe;
+note right
+    Curseur donnant la 
+    distance min entre 
+    les aiguilles
+end note
+#LightBlue:Détermination coord aiguilles
+ => //Partie 2 programme Élodie//;
+:Visualisation;
+#LightBlue:Génération fichiers Gcode
+marquage et tricotissage
+ => //marq-tric.py//;
+end
+@enduml
