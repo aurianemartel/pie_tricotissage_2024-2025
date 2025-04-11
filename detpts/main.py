@@ -237,19 +237,22 @@ def elodie1(image_init, epsilon = 0.1, afficher_squelette = False, afficher_cont
     # squeletonize
     invert = cv2.bitwise_not(image)  # noir devient blanc et vice-versa
     skeleton = skeletonize(invert)
+
     if afficher_squelette:
         # display results
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(8, 4), sharex=True, sharey=True)
 
         ax = axes.ravel()
 
-        ax[0].imshow(image, cmap=plt.cm.gray)
+        """ax[0].imshow(image, cmap=plt.cm.gray)
         ax[0].axis('off')
         ax[0].set_title('original', fontsize=20)
 
         ax[1].imshow(skeleton, cmap=plt.cm.gray)
         ax[1].axis('off')
-        ax[1].set_title('skeleton', fontsize=20)
+        ax[1].set_title('skeleton', fontsize=20)"""
+        plt.imshow(skeleton, cmap = plt.cm.gray)
+
     contours = skeleton2contours(skeleton)
     points_morceaux_par_gpe = [[] for _ in range(len(contours))]
     longueurs = []
@@ -264,7 +267,7 @@ def elodie1(image_init, epsilon = 0.1, afficher_squelette = False, afficher_cont
 if __name__ == '__main__':
     #print_hi('PyCharm')
     chemin = "C:\\Users\\debri\\OneDrive\\Bureau\\ENSTA\\PIE\\premier_jet_python\\image.png"
-    lx, ly, longueurs, pmpg = elodie1(chemin, epsilon=0.1, afficher_im_init=True)
-    elodie2.elodie2(pmpg, 1, 0, 0, [20, 20])
+    lx, ly, longueurs, pmpg = elodie1(chemin, epsilon=0.1, afficher_im_init=True, afficher_squelette= False)
+    elodie2.elodie2(pmpg, 0.5, 0, 0, [20, 10])
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

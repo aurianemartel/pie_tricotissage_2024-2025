@@ -34,7 +34,7 @@ def raffiner_approx_affine2(points, n):
     #print("longueur : ", longueur, "\n")
     while j < n - 1:
         #print("i: ", i, "j : ", j, "debug_longueur_utilisee:", debug_longueur_utilisee, "longueur : ", longueur, "longueur_restante", longueur_restante, "longueur suivant-actuel : ", np.linalg.norm(actuel - suivant) )
-        #print("Dans le gros while")
+        #print("Dans le gros while", "j : ", j)
         #print("i, j raffiner approx affine : ", i, j)
         if (np.linalg.norm(actuel - suivant) >= longueur_restante):   #on a la place de rajouter un point sur ce morceau
             #print("Dans le if")
@@ -55,10 +55,10 @@ def raffiner_approx_affine2(points, n):
                 suivant = points[i]
                 suivant = suivant.astype(np.float64)
                 #print("suivant, actuel : ", suivant, actuel)
-                while False and any(suivant == actuel) and i < (len(points) - 1):
+                while (np.linalg.norm(suivant - actuel) == 0) and i < (len(points) - 1):
                     #JE NE COMPRENDS PAS POURQUOI MAIS DE MANIERE NON DETERMINISTE, DES POINTS SUCCESSIFS SONT PARFOIS
                     #IDENTIQUES
-                    #print("Dans le while")
+                    #print("Dans le while", "i :", i, "len(points) : ", len(points))
                     i+=1
                     actuel = suivant
                     suivant = points[i]
@@ -66,7 +66,7 @@ def raffiner_approx_affine2(points, n):
                 #print("suivant, actuel : ", suivant, actuel)
                 #print("Hors du while")
                 direction = (suivant - actuel) / np.linalg.norm(suivant - actuel)
-    if any(actuel!= points[-1]):  #on force l'ajout du dernier point
+    if np.linalg.norm(suivant - actuel) != 0:  #on force l'ajout du dernier point
         nouveaux_points.append(points[-1])
     #print("Nouveaux_points : ", nouveaux_points)
     return nouveaux_points
@@ -96,8 +96,8 @@ def rescale(points_morceaux_par_gpe, scale_factor, offset_x, offset_y):
     """Destructif, points_morceaux_par_gpe est modifié"""
     for points in points_morceaux_par_gpe:
         for point in points:
-            point[0] = point[0] * scale_factor + offset_x
-            point[1] = point[1] * scale_factor + offset_y
+            point[0] = scale_factor * (point[0] + offset_x)
+            point[1] = scale_factor * (point[1] + offset_y)
 
 
 
@@ -134,9 +134,20 @@ def afficher_aiguilles(aiguilles_par_gpe):
     plt.show()
 
 
-def elodie2(points_morceaux_par_gpe, scale_factor, offset_x,offset_y, n):
+def elodie2(points_morceaux_par_gpe, scale_factor, offset_x, offset_y, n):
+    """
+    Entrée :
+        -points_morceaux_par_gpe : output de elodie1 : coordonnées des points de l'approximation du contour en
+            droite par morceaux
+        -scale_factor : facteur de zoom de la figure
+            Exemple : scale factor = 2 donnera des points deux fois plus espacés
+        -offset_x : indique le décalage en x (première coordonnée) : ajouté tel quel AVANT le zoom
+        -offset_y : idem sur y (deuxième coordonée)
+        -n : liste d'entiers : n[i] est le nombre d'aiguilles du groupe i
+    """
     #afficher_points(points_morceaux_par_gpe)
     rescale(points_morceaux_par_gpe, scale_factor, offset_x, offset_y)
+    #afficher_points(points_morceaux_par_gpe)
     #print("SCALING")
     #afficher_points(points_morceaux_par_gpe)
     #print("rescale effectue")
