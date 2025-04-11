@@ -2,7 +2,7 @@ nom: essai
 dimensions:
   - 350
   - 600
-epsilon: 20
+epsilon: 9.99
 liens:
   - ["groupe1","groupe2"]
 groupes:
