@@ -98,7 +98,7 @@ def marquage(yamlFile):
                 marq.write(G0(point[0], point[1]))
                 # marq.write("M3\nG4 P1 \nM5\n\n") #descendre et relever crayon
                 marq.write("\nM0\n\n")
-    print(f"Fichier marq_{data['nom']}.gcode généré avec succès")
+    return(f"Fichier marq_{data['nom']}.gcode généré avec succès")
 
 
 """
@@ -363,7 +363,7 @@ def tricotissage(yamlFile):
             liste_aiguilles = data["groupes"][lien[0]] + data["groupes"][lien[1]]
             tric.write(trace(prc, epsilon, liste_aiguilles))
 
-    print(f"Fichier tric_{data['nom']}.gcode généré avec succès")
+    return(f"Fichier tric_{data['nom']}.gcode généré avec succès")
 
 
 """
@@ -377,12 +377,12 @@ if __name__ == "__main__":
                 yamlFile = PATH_YAML + sys.argv[2]
             else:
                 yamlFile = PATH_YAML + "file.yaml"
-            marquage(yamlFile)
+            print(marquage(yamlFile))
         elif sys.argv[1][0] == "t":
             if len(sys.argv) > 2:
                 yamlFile = PATH_YAML + sys.argv[2]
             else:
                 yamlFile = PATH_YAML + "file.yaml"
-            tricotissage(yamlFile)
+            print(tricotissage(yamlFile))
     else:
         print("Please provide command and file\n")
