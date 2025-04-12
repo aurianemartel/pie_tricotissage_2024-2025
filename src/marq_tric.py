@@ -16,9 +16,17 @@ V3. Proposer une résolution automatique : couper en plusieurs étapes
 import yaml
 import sys
 
-PATH_OUT = "../prgs_gcode/"
-PATH_YAML = "../yaml_files/"
-EPSILON = 20  # Distance aux aiguilles des points de passages, en y et en z
+# Paramètres
+PATH_OUT = "../prgs_gcode/"  # Chemin de sortie des fichiers gcode
+PATH_YAML = "../yaml_files/"  # Chemin de lecture des fichiers yaml
+
+VERBOSE = False  # True pour les affichage de débuggage
+
+# Taille de la zone de travail de la machine
+MAX_Y = 350  # TODO , 375 ?
+MIN_Y = 0
+MAX_Z = 600
+MIN_Z = 0
 
 
 def enTete(dim_y, dim_z):
@@ -34,6 +42,7 @@ G0 Y0 Z0
 """
 
 
+# Les 4 lignes suivantes permettent de faire le tour de la zone accessible
 """
 G0 Y{dim_y} Z0
 G0 Y{dim_y} Z{dim_z}
@@ -42,28 +51,27 @@ G0 Y0 Z0
 
 """
 
-"""
-Fonctions de mouvement
-"""
+
+# Fonctions de mouvement G-code
 
 
-def G0(y, z):  # Aller à (y,z) rapidement, par une ligne droite
+def G0(y, z):
+    """Aller à (y,z) rapidement, par une ligne droite"""
     return f"G0 Y{y} Z{z}"
 
 
-def G1(y, z):  # Aller à (y,z) par une ligne droite à la vitesse donnée par F
+def G1(y, z):
+    """Aller à (y,z) par une ligne droite à la vitesse donnée par le Feed Rate, réglable avec la commande F..."""
     return f"G1 Y{y} Z{z}"
 
 
-def G2(
-    yi, zi, yf, zf, cy, cz
-):  # Aller à (y,z) en arc de cercle anti-horaire de centre (cy,cz)
+def G2(yi, zi, yf, zf, cy, cz):
+    """Aller à (yf,zf) en arc de cercle anti-horaire de centre (cy,cz), en partant de (yi,zi)"""
     return f"G2 Y{yf} Z{zf} J{cy-yi} K{cz-zi}"
 
 
-def G3(
-    yi, zi, yf, zf, cy, cz
-):  # Aller à (y,z) en arc de cercle horaire de centre (cy,cz)
+def G3(yi, zi, yf, zf, cy, cz):
+    """Aller à (yf,zf) en arc de cercle horaire de centre (cy,cz), en partant de (yi,zi)"""
     return f"G3 Y{yf} Z{zf} J{cy-yi} K{cz-zi}"
 
 
@@ -74,36 +82,45 @@ def G23(yi, zi, yf, zf, cy, cz, sens):
     elif sens == 1:  # sens direct
         return G3(yi, zi, yf, zf, cy, cz)
     else:
-        print("Problème : sens non valide")
-        return ""
+        raise ValueError("Problème : sens non valide")
 
 
-"""
-Marquage
-"""
+## Marquage
+
+# TODO : prendre en compte le décalage entre le crayon et la buse de tricotissage
 
 
-def marquage(yamlFile):
+def marquage(yamlFile, offset_x=0, offset_y=0):
     """
     Crée le fichier gcode de marquage associé au patron décrit dans le fichier yaml en argument.
+    les valeurs d'offset_x et offset_y sont les décalages entre la position de la buse et celle du crayon.
     """
     with open(yamlFile, "r") as file:
         data = yaml.safe_load(file)
     with open(PATH_OUT + f"marq_{data['nom']}.gcode", "w") as marq:
         dim_y, dim_z = data["dimensions"]
         marq.write(enTete(dim_y, dim_z))
-        # marq.write("M5 S1000\n\n")
+        marq.write("M5 S1000\n\n")  # Activer le moteur
         for groupe in data["groupes"]:
             for point in data["groupes"][groupe]:
-                marq.write(G0(point[0], point[1]))
-                # marq.write("M3\nG4 P1 \nM5\n\n") #descendre et relever crayon
+                py, pz = point
+                if (
+                    py + offset_x > MAX_Y
+                    or py + offset_x < MIN_Y
+                    or pz + offset_y > MAX_Z
+                    or pz + offset_y < MIN_Z
+                ):
+                    raise ValueError(
+                        "Problème : coordonnées hors limites, avez vous pris en compte que le crayon est décalé par rapport à la buse ?"
+                    )
+                marq.write(G0(py + offset_x, pz + offset_y))
+                marq.write("M3\nG4 P1 \nM5\n\n")  # Descendre et relever crayon
                 marq.write("\nM0\n\n")
+    marq.write("G0 Y0 Z0\n")
     print(f"Fichier marq_{data['nom']}.gcode généré avec succès")
 
 
-"""
-Tricotissage
-"""
+# Tricotissage
 
 
 def parcours(groupe1, groupe2):
@@ -141,19 +158,27 @@ def parcours(groupe1, groupe2):
 
 
 def vect(pt1, pt2):
+    """Retourne le vecteur entre pt1 et pt2"""
     return [pt2[0] - pt1[0], pt2[1] - pt1[1]]
 
 
 def norme(u):
+    """Retourne la norme du vecteur u"""
     return (u[0] ** 2 + u[1] ** 2) ** 0.5
 
 
 def sens_arc(u, v):
+    """
+    Retourne le sens de l'arc de cercle entre les vecteurs u et v, soit -1 soit 1
+    Pour un parcours classique, le sens est toujours le même quand on tourne autour d'aiguilles
+    Quand on évite une aiguille sur un segment droit, le sens est logiquement l'opposé du sens associé au reste du parcours.
+    """
     if u[0] * v[1] - u[1] * v[0] > 0:
         sens = 1  # sens direct
     elif u[0] * v[1] - u[1] * v[0] < 0:
         sens = -1  # sens indirect
     else:
+        # TODO : mettre à -1 ou 1 de manière arbitraire ? Mais comme le sens est toujours le même lors du parcours, on pourrait gérer le cas en ne prenant pas juste le sens en compte quand il est indéfini
         sens = 0
         print("Problème : vecteurs colinéaires\n")
     return sens
@@ -162,6 +187,7 @@ def sens_arc(u, v):
 def cercle_intersection(c, r, p1, p2):
     """
     Détermine s'il y a intersection entre une droite (définie par p1 et p2) et un cercle (défini par son centre c et son rayon r).
+    Retourne un booléen indiquant s'il y a intersection et une liste des points d'intersection.
     """
     # Vecteur directeur de la droite normalisé
     d = vect(p1, p2)
@@ -207,14 +233,19 @@ def cercle_intersection(c, r, p1, p2):
 def premiere_intersection(
     p1, p2, aiguille_actuelle, aiguille_arrivee, liste_aiguilles, epsilon
 ):
+    """
+    Détermine s'il y a intersection entre le segment [p1, p2] et les aiguilles.
+    Retourne un booléen indiquant s'il y a intersection, l'aiguille d'intersection et la liste des points d'intersection.
+    """
     intersection_trouvee = False
     aiguille_intersection = None
     intersections = []
+    min_distance = float("inf")
     for aiguille in liste_aiguilles:
         if aiguille != aiguille_actuelle and aiguille != aiguille_arrivee:
             resultat, resultat_intersections = cercle_intersection(
                 aiguille, epsilon, p1, p2
-            )  # 0.99 pour éviter de considérer un contact avec les aiguilles de p1 et aiguille_arrivee
+            )
             if resultat:
                 distance = min(
                     [
@@ -227,12 +258,17 @@ def premiere_intersection(
                     min_distance = distance
                     aiguille_intersection = aiguille
                     intersections = resultat_intersections
-    if intersection_trouvee:
+    if intersection_trouvee and VERBOSE:  # Affichage pour le débuggage
         print(
             f"je suis le segment {p1} -> {p2}, de l'aiguille {aiguille_actuelle} à l'aiguille {aiguille_arrivee}"
         )
         print(f"Intersection trouvée avec {aiguille_intersection} en {intersections}")
         print(f"Distance : {min_distance}")
+    if min_distance < 0.0001:
+        # La résolution est impossible car des cercles d'aiguilles se touchent
+        raise ValueError(
+            f"Epsilon = {epsilon} trop grand, pas assez d'espace entre les aiguilles"
+        )
     return intersection_trouvee, aiguille_intersection, intersections
 
 
@@ -240,14 +276,11 @@ def pointsPassage(pt1, pt2, pt3, epsilon):
     """Retourne les points par lesquels passer pour contourner pt2 vers pt3,
     et le sens de l'arc de cercle entre ces points"""
     assert (pt1 != pt2) & (pt1 != pt3) & (pt2 != pt3)
-
     u = vect(pt1, pt2)
     v = vect(pt2, pt3)
-    sens = sens_arc(u, v)
-
-    # pp2 = [pt2[0] + epsilon*u[0]/norme(u), pt2[1] + epsilon*u[1]/norme(u)]
-    # pp1 = [pt2[0] - epsilon*v[0]/norme(v), pt2[1] - epsilon*v[1]/norme(v)]
-
+    sens = sens_arc(
+        u, v
+    )  # Ce sens est normalement toujours le même le long de notre parcours
     pp1 = [
         pt2[0] + sens * epsilon * u[1] / norme(u),
         pt2[1] + sens * (-1) * epsilon * u[0] / norme(u),
@@ -256,83 +289,112 @@ def pointsPassage(pt1, pt2, pt3, epsilon):
         pt2[0] + sens * epsilon * v[1] / norme(v),
         pt2[1] + sens * (-1) * epsilon * v[0] / norme(v),
     ]
-
     return pp1, pp2, sens
 
 
-def trace(prc, epsilon, liste_aiguilles):
-    chemin = ""
-    # Initialiser le tricotissage : cercle autour de la première aiguille
-    u = vect(prc[3], prc[0])
-    v = vect(prc[0], prc[1])
-    pp1 = [prc[0][0] + epsilon * u[0] / norme(u), prc[0][1] + epsilon * u[1] / norme(u)]
-    pp2 = pp1  # On fait un tour en revenant au point de départ
-    sens = sens_arc(u, v)
-    chemin += f"""{G0(pp1[0],pp1[1])}
-M0
+def evitement_aiguilles_ligne_droite(
+    pp_start, pp_end, aiguille_start, aiguille_end, liste_aiguilles, epsilon, sens
+):
+    """
+    Renvoie les commandes G-code pour aller de pp_start à pp_end en contournant les aiguilles sur le trajet
+    i est l'indice de l'aiguille actuelle dans le parcours prc
+    sens est le sens de parcours, pas celui du contournement
+    """
+    commandes = ""
 
-{G23(pp1[0],pp1[1],pp1[0],pp1[1],prc[0][0],prc[0][1],sens)}
-"""
+    intersection_trouvee, aiguille_intersection, intersections = premiere_intersection(
+        pp_start, pp_end, aiguille_start, aiguille_end, liste_aiguilles, epsilon
+    )
+
+    while intersection_trouvee:
+        # Tant qu'on ne peut pas aller tout droit jusqu'à l'aiguille suivante, on fait des contounements
+        if len(intersections) == 1:
+            # 1 seul point d'intersection avec le cercle
+            pp_intersection = intersections[0]
+        else:  # il y a deux points d'intersection avec le cercle
+            vect_ancienchemin = vect(pp_start, pp_end)
+            vect_ancienchemin = [
+                vect_ancienchemin[0] / norme(vect_ancienchemin),
+                vect_ancienchemin[1] / norme(vect_ancienchemin),
+            ]
+            vect_orth = [-sens * vect_ancienchemin[1], sens * vect_ancienchemin[0]]
+            # On calcule le point de passage
+            pp_intersection = [
+                aiguille_intersection[0] + epsilon * vect_orth[0],
+                aiguille_intersection[1] + epsilon * vect_orth[1],
+            ]
+
+            # Pas sur que la partie suivante soit nécessaire, car normalement comme on tourne toujours dans le même
+            # sens (et que ce sense est enregistré dans la variable sens), on sait toujours dans quel "sens" doit aler le vecteur orthogonal
+            sens_contournement = sens_arc(
+                vect(pp_start, pp_intersection), vect(pp_intersection, pp_end)
+            )
+            if sens_contournement == sens:
+                # On prend le point opposé sur le cercle
+                if VERBOSE:
+                    print("CHANGEMENT DE SENS DU VECTEUR ORTHOGONAL")
+                pp_intersection = [
+                    aiguille_intersection[0] - epsilon * vect_orth[0],
+                    aiguille_intersection[1] - epsilon * vect_orth[1],
+                ]
+
+        commandes += evitement_aiguilles_ligne_droite(
+            pp_start,
+            pp_intersection,
+            aiguille_start,
+            aiguille_intersection,
+            liste_aiguilles,
+            epsilon,
+            sens,
+        )
+        # On enregistre le point de passage et on cherche la prochaine intersection (normalement il n'y en a pas , la partie est elle utile ?)
+        commandes += f"{G1(pp_intersection[0],pp_intersection[1])}\n"
+
+        pp_start = pp_intersection
+        aiguille_start = aiguille_intersection
+        intersection_trouvee, aiguille_intersection, intersections = (
+            premiere_intersection(
+                pp_start,
+                pp_end,
+                aiguille_start,
+                aiguille_end,
+                liste_aiguilles,
+                epsilon,
+            )
+        )
+    return commandes
+
+
+def trace(prc, epsilon, liste_aiguilles):
+    """
+    Renvoie la suite de commandes G-code correspondant au tricotissage en suivant le parcours prc
+    On a des cercles de sécurité de rayon epsilon autour de chaque aiguille
+    """
+    chemin = ""
+
+    # Initialiser le tricotissage : cercle autour de la première aiguille
+    pp1, pp2, sens = pointsPassage(
+        prc[3], prc[0], prc[1], epsilon
+    )  # TODO : s'adapte mal si on change le type de parcours
+    chemin += evitement_aiguilles_ligne_droite(
+        [0, 0], pp2, [0, 0], [0, 0], liste_aiguilles, 0.99 * epsilon, sens
+    )
+    chemin += f"{G1(pp2[0],pp2[1])}\nM0\n\n{G23(pp2[0],pp2[1],pp2[0],pp2[1],prc[0][0],prc[0][1],sens)}\n"
+
     # Boucle sur le parcours
     l = len(prc)
     for i in range(l - 2):
         p_prec = pp2
         pp1, pp2, sens = pointsPassage(prc[i], prc[i + 1], prc[i + 2], epsilon)
-        intersection_trouvee, aiguille_intersection, intersections = (
-            premiere_intersection(
-                p_prec, pp1, prc[i], prc[i + 1], liste_aiguilles, epsilon
-            )
+
+        # On va en ligne droite jusqu'à l'aiguille suivante, en faisant des contournements si nécessaire
+        chemin += evitement_aiguilles_ligne_droite(
+            p_prec, pp1, prc[i], prc[i + 1], liste_aiguilles, epsilon, sens
         )
-        # On calcule la normale
-        while intersection_trouvee:
-            if len(intersections) == 1:
-                pp_intersection = intersections[0]
-            else:  # il y a deux points d'intersection avec le cercle
-                vect_ancienchemin = vect(p_prec, pp1)
-                vect_ancienchemin = [
-                    vect_ancienchemin[0] / norme(vect_ancienchemin),
-                    vect_ancienchemin[1] / norme(vect_ancienchemin),
-                ]
-                vect_orth = [-sens * vect_ancienchemin[1], sens * vect_ancienchemin[0]]
-                # On calcule le point de passage
-                pp_intersection = [
-                    aiguille_intersection[0] + epsilon * vect_orth[0],
-                    aiguille_intersection[1] + epsilon * vect_orth[1],
-                ]
 
-                # Pas sur que la partie suivante soit nécessaire, car normalement comme on tourne toujours dans le même
-                # sens (et que ce sense est enregistré dans la variable sens), on sait toujours dans quel "sens" doit aler le vecteur orthogonal
-                sens_contournement = sens_arc(
-                    vect(p_prec, pp_intersection), vect(pp_intersection, pp1)
-                )  # C'est pas pp2, c'est genre pp3
-                if sens_contournement == sens:
-                    # On prend le point opposé sur le cercle
-                    print("CHANGEMENT DE SENS DU VECTEUR ORTHOGONAL")
-                    pp_intersection = [
-                        aiguille_intersection[0] - epsilon * vect_orth[0],
-                        aiguille_intersection[1] - epsilon * vect_orth[1],
-                    ]
+        # On a fini de traiter les contournement, on peut aller à l'aiguille suivante et faire le tour
+        chemin += f"{G1(pp1[0],pp1[1])}\n{G23(pp1[0],pp1[1],pp2[0],pp2[1],prc[i+1][0],prc[i+1][1],sens)}\n\n"
 
-            # On enregistre le point de passage et on cherche la prochaine intersection (normalement il n'y en a pas , la partie est elle utile ?)
-            chemin += f"{G1(pp_intersection[0],pp_intersection[1])}\n"
-            p_prec = pp_intersection
-            intersection_trouvee, aiguille_intersection, intersections = (
-                premiere_intersection(
-                    p_prec,
-                    pp1,
-                    aiguille_intersection,
-                    prc[i + 1],
-                    liste_aiguilles,
-                    epsilon,
-                )
-            )
-
-        # On continue notre trajet (on ne consièdere pas plus de 1 intersection)
-        # Et c'est pas encore satisfaisant car si le epsilonest trop grand on passe de l'autre coté du cercle..
-        chemin += f"""{G1(pp1[0],pp1[1])}
-{G23(pp1[0],pp1[1],pp2[0],pp2[1],prc[i+1][0],prc[i+1][1],sens)}
-
-"""
     # Finaliser le tricotissage : gestion du dernier point
     u = vect(prc[l - 4], prc[l - 1])
     v = vect(prc[l - 2], prc[l - 1])
@@ -341,13 +403,14 @@ M0
         prc[l - 1][1] + epsilon * u[1] / norme(u),
     ]
     sens = sens_arc(u, v)
-    chemin += f"""{G1(pp1[0],pp1[1])}
-{G23(pp1[0],pp1[1],pp1[0],pp1[1],prc[l-1][0],prc[l-1][1],sens)}
-"""
+    chemin += f"{G1(pp1[0],pp1[1])}\n{G23(pp1[0],pp1[1],pp1[0],pp1[1],prc[l-1][0],prc[l-1][1],sens)}\n"
     return chemin
 
 
 def tricotissage(yamlFile):
+    """
+    Crée le fichier gcode de tricotissage associé au patron décrit dans le fichier yaml en argument.
+    """
     # Récupération des données
     with open(yamlFile, "r") as file:
         data = yaml.safe_load(file)
@@ -366,11 +429,10 @@ def tricotissage(yamlFile):
     print(f"Fichier tric_{data['nom']}.gcode généré avec succès")
 
 
-"""
-Main
-"""
+# Main
 
 if __name__ == "__main__":
+    VERBOSE = True
     if len(sys.argv) > 1:
         if sys.argv[1][0] == "m":
             if len(sys.argv) > 2:
