@@ -164,7 +164,7 @@ def plot_aiguilles_pondere(skeleton, ntot, epsilon):
             y = np.append(y, points_raffines[j + 1])
             j += 2
             aiguilles_par_gpe[i] = np.append(aiguilles_par_gpe, (x, y))
-        print(x, y)
+        print("plot aiguilles pondere , (x, y)", (x,y))
     return aiguilles_par_gpe
 
 def pos_aiguilles_longueur(skeleton, l, epsilon):
@@ -176,7 +176,7 @@ def pos_aiguilles_longueur(skeleton, l, epsilon):
         points = approx_morceaux(contour, epsilon)
         longueur = longueur_approx_morceaux(points)
         points_raffines = raffiner_approx_affine(points, int(longueur / l))
-        print(int(longueur / l ))
+        print("int (longueur / l) : ", int(longueur / l ))
         # print(points_raffines)
         x = np.array([])
         y = np.array([])
@@ -212,15 +212,18 @@ def dimension(points_morceaux_par_gpe):
 
 
 
-def elodie1(image_init, afficher_squelette = False, afficher_contours = False, afficher_im_init = False,
+def elodie1(image_init, epsilon = 0.1, afficher_squelette = False, afficher_contours = False, afficher_im_init = False,
             afficher_splines = False):
-    """Renvoie :
+    """
+        Entrée:
+        -image_init : chemin d'accès à l'image
+        -epsilon : tolérance dans approx_morceaux; eps grand = caccul rapide mais découpe moins précise
+        Renvoie :
         -l'écart maximal en x
         -l'écart maximal en y
         -la liste des longueurs de chaque contour (enfin, de leur approximation par morceaux
         -la liste des points de changements de pente de l'approximation, pour chaque groupe
     """
-    epsilon = 0.1  # tolérance dans approx_morceaux; esp grand = calcul rapide mais découpe moins précise
     # Charger l'image
     image_pre_sym = cv2.imread("C:\\Users\\debri\\OneDrive\\Bureau\\ENSTA\\PIE\\premier_jet_python\\image.png",
                                cv2.IMREAD_GRAYSCALE)
@@ -228,15 +231,16 @@ def elodie1(image_init, afficher_squelette = False, afficher_contours = False, a
     image = np.transpose(image)
     # Afficher l'image originale
     if afficher_im_init:
-        plt.imshow(image_init, cmap='gray')
+        plt.imshow(image_pre_sym, cmap='gray')
         plt.title("Image d'origine")
         plt.show()
     # squeletonize
     invert = cv2.bitwise_not(image)  # noir devient blanc et vice-versa
     skeleton = skeletonize(invert)
+
     if afficher_squelette:
         # display results
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(8, 4), sharex=True, sharey=True)
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(8, 4))  # plus de sharex/sharey
 
         ax = axes.ravel()
 
@@ -247,6 +251,10 @@ def elodie1(image_init, afficher_squelette = False, afficher_contours = False, a
         ax[1].imshow(skeleton, cmap=plt.cm.gray)
         ax[1].axis('off')
         ax[1].set_title('skeleton', fontsize=20)
+
+        plt.tight_layout()
+        plt.show()
+
     contours = skeleton2contours(skeleton)
     points_morceaux_par_gpe = [[] for _ in range(len(contours))]
     longueurs = []
@@ -254,13 +262,14 @@ def elodie1(image_init, afficher_squelette = False, afficher_contours = False, a
         points_morceaux_par_gpe[i] = approx_morceaux(contour, epsilon)
         longueurs.append(longueur_approx_morceaux((points_morceaux_par_gpe[i])))
     lx, ly = dimension(points_morceaux_par_gpe)
-    print(lx, ly, longueurs, points_morceaux_par_gpe)
+    #print("lx, ly, longueurs, pmpg : ", lx, ly, longueurs, points_morceaux_par_gpe)
     return lx, ly, longueurs, points_morceaux_par_gpe
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #print_hi('PyCharm')
-    lx, ly, longueurs, pmpg = elodie1("C:\\Users\\debri\\OneDrive\\Bureau\\ENSTA\\PIE\\premier_jet_python\\image.png")
-    elodie2.elodie2(pmpg, 1, 0, 0, [10, 10])
+    chemin = "C:\\Users\\debri\\OneDrive\\Bureau\\ENSTA\\PIE\\premier_jet_python\\image.png"
+    lx, ly, longueurs, pmpg = elodie1(chemin, epsilon=0.1, afficher_im_init=True, afficher_squelette=True)
+    elodie2.elodie2(pmpg, 0.5, 0, 0, [20, 10])
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
