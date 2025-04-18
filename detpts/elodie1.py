@@ -3,12 +3,12 @@
 # Press Maj+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
-import elodie2
 import cv2
 import numpy as np
 import scipy.ndimage as ndi     #convolution : permet de déterminer les extrémités du squelette
 import matplotlib.pyplot as plt
 from skimage.morphology import skeletonize
+from aux import longueur_approx_morceaux
 
 def norme_carre(vecteur):      #norme au carré d'un vecteur de dimension 2
     return(vecteur[0] ** 2 + vecteur[1] ** 2)
@@ -73,120 +73,6 @@ def skeleton2contours(skeleton):
             contours.append(contour)
     return contours
 
-def longueur_approx_morceaux(points):
-    """si points a été obtenu à partir de approx_morceaux, renvoie la somme des longueurs des morceaux, qui approxime
-    la longueur du contour d'origine"""
-    longueur = 0
-    for i, point in enumerate(points):
-        actuel = np.array(point)  # converti un tuple en np.array, qui supporte la soustraction
-        if i > 0:
-            longueur += np.linalg.norm(actuel - prec)
-        prec = actuel
-    return longueur
-
-
-
-def raffiner_approx_affine(points, n):
-    """si points a été obtenu à partir de approx_morceaux, permet de placer n points équidistants sur la forme
-    approximée; appelée par plot_aiguille"""
-    longueur = 0
-    for i, point in enumerate(points):
-        actuel = np.array(point)     #converti un tuple en np.array, qui supporte la soustraction
-        if i > 0:
-            longueur += np.linalg.norm(actuel - prec)
-        prec = actuel
-    longueur = longueur_approx_morceaux(points)
-    longueur_segment = longueur / (n-1)
-    longueur_restante = longueur_segment
-    actuel = np.array(points[0])
-    actuel = actuel.astype(np.float64)       #pour pouvoir gérer des opérations faisant intervenir des flottants
-    #print(actuel.dtype)
-    suivant = np.array(points[1])
-    suivant = suivant.astype(np.float64)       #pour pouvoir gérer des opérations faisant intervenir des flottants
-    i = 1       #numéro du point suivant
-    direction = (suivant - actuel) / np.linalg.norm(suivant - actuel)
-    nouveaux_points = [actuel]
-    while i < len(points):
-        if (np.linalg.norm(actuel - suivant) >= longueur_restante):   #on a la place de rajouter un point sur ce morceau
-            actuel += longueur_restante * direction
-            longueur_restante = longueur_segment
-            #print(actuel)
-            nouveaux_points = np.append(nouveaux_points, actuel)
-            #print(nouveaux_points)
-        else:           #pas la place de rajouter un point sur le morceau
-            i += 1  #on passe au morceau suivant
-            if i < len(points) - 1:     #il reste encore au moins un morceau
-                longueur_restante -= np.linalg.norm(actuel - suivant)
-                #print(suivant.dtype)
-                actuel = suivant
-                suivant = points[i]
-                suivant = suivant.astype(np.float64)
-                direction = (suivant - actuel) / np.linalg.norm(suivant - actuel)
-    return nouveaux_points
-
-def pos_aiguilles(skeleton, n, epsilon):
-    """Renvoie la position des aiguilles avec n points par groupe (n fixe, idetique pour chaque groupe)"""
-    contours = skeleton2contours(skeleton)
-    aiguilles_par_gpe = [[] for _ in range(len(contours))]
-    for i, contour in enumerate(contours):
-        points = approx_morceaux(contour,epsilon)
-        points_raffines = raffiner_approx_affine(points,n[i])
-        #print(points_raffines)
-        i = 0
-        while i < len(points_raffines) - 1:
-            aiguilles_par_gpe[i] = np.append(aiguilles_par_gpe[i], (points_raffines[i], points_raffines[i+1]))
-            i += 2
-    return aiguilles_par_gpe
-
-
-def plot_aiguilles_pondere(skeleton, ntot, epsilon):
-    """Plot les aiguilles avec ntot aiguilles en tout par groupe, le nombre d'aiguilles d'un groupe dépend de sa
-    longueur; de par les arrondis, il est possible que le nombre d'aiguilles total légèrement différent de ntot"""
-    contours = skeleton2contours(skeleton)
-    longueur_totale = 0
-    contour_simplifie = []
-    longueurs = []
-    aiguilles_par_gpe = [[] for _ in range(len(contours))]
-    for contour in contours:
-        points = approx_morceaux(contour, epsilon)
-        contour_simplifie.append(points)
-        l_contour = longueur_approx_morceaux(points)
-        longueur_totale += l_contour
-        longueurs.append(l_contour)
-    for i, points in enumerate(contour_simplifie):
-        points_raffines = raffiner_approx_affine(points, round(ntot * (longueurs[i] / longueur_totale)))
-        # print(points_raffines)
-        x = np.array([])
-        y = np.array([])
-        j = 0
-        while j < len(points_raffines) - 1:
-            x = np.append(x, points_raffines[j])
-            y = np.append(y, points_raffines[j + 1])
-            j += 2
-            aiguilles_par_gpe[i] = np.append(aiguilles_par_gpe, (x, y))
-        print("plot aiguilles pondere , (x, y)", (x,y))
-    return aiguilles_par_gpe
-
-def pos_aiguilles_longueur(skeleton, l, epsilon):
-    """Affiche la position des aiguilles avec un espacement d'au moins l entre les aiguilles
-    (aussi proche que possible)"""
-    contours = skeleton2contours(skeleton)
-    aiguilles_par_gpe = [[] for _ in range(len(contours))]
-    for contour in contours:
-        points = approx_morceaux(contour, epsilon)
-        longueur = longueur_approx_morceaux(points)
-        points_raffines = raffiner_approx_affine(points, int(longueur / l))
-        print("int (longueur / l) : ", int(longueur / l ))
-        # print(points_raffines)
-        x = np.array([])
-        y = np.array([])
-        i = 0
-        while i < len(points_raffines) - 1:
-            x = np.append(x, points_raffines[i])
-            y = np.append(y, points_raffines[i + 1])
-            aiguilles_par_gpe[i] = np.append(aiguilles_par_gpe, (x, y))
-            i += 2
-    return aiguilles_par_gpe
 
 def dimension(points_morceaux_par_gpe):
     """Renvoie le plus grand écrat en x et le plus grand écart en y parmi tous les points de tous les groupes
@@ -264,12 +150,5 @@ def elodie1(image_init, epsilon = 0.1, afficher_squelette = False, afficher_cont
     #print("lx, ly, longueurs, pmpg : ", lx, ly, longueurs, points_morceaux_par_gpe)
     return lx, ly, longueurs, points_morceaux_par_gpe
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    #print_hi('PyCharm')
-    chemin = "C:\\Users\\debri\\OneDrive\\Bureau\\ENSTA\\PIE\\premier_jet_python\\4gpes.png"
-    lx, ly, longueurs, pmpg = elodie1(chemin, epsilon=0.01, afficher_im_init=False, afficher_squelette=False)
-    elodie2.elodie2(pmpg, 0.25, -100, -100, [10, 10, 10, 10], afficher_points_pre_scale=False)
-    #elodie2.elodie2(pmpg, 2, 0, 0, [50, 10], afficher_points_pre_scale=False)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
