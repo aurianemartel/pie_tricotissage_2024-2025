@@ -37,8 +37,6 @@ G40
 G49
 F10000
 
-G0 Y0 Z0
-
 """
 
 
@@ -101,8 +99,8 @@ def marquage(yamlFile, offset_x=0, offset_y=0):
         dim_y, dim_z = data["dimensions"]
         marq.write(enTete(dim_y, dim_z))
         marq.write("M5 S1000\n\n")  # Activer le moteur
-        for groupe in data["groupes"]:
-            for point in data["groupes"][groupe]:
+        for i, groupe in enumerate(data["groupes"]):
+            for j, point in enumerate(data["groupes"][groupe]):
                 py, pz = point
                 if (
                     py + offset_x > MAX_Y
@@ -114,9 +112,11 @@ def marquage(yamlFile, offset_x=0, offset_y=0):
                         "Problème : coordonnées hors limites, avez vous pris en compte que le crayon est décalé par rapport à la buse ?"
                     )
                 marq.write(G0(py + offset_x, pz + offset_y))
-                marq.write("M3\nG4 P1 \nM5\n\n")  # Descendre et relever crayon
-                marq.write("\nM0\n\n")
-    marq.write("G0 Y0 Z0\n")
+                if i == 0 and j == 0:
+                    # Pour la première aiguille, on attend que le crayon soit installé
+                    marq.write("\nM0\n")
+                marq.write("\nM3\nG4 P1 \nM5\n\n")  # Descendre et relever crayon
+        marq.write("G0 Y50 Z100\nG0 Y50 Z0\nG0 Y0 Z0\n")
     print(f"Fichier marq_{data['nom']}.gcode généré avec succès")
 
 
@@ -419,6 +419,7 @@ def tricotissage(yamlFile):
 
     with open(PATH_OUT + f"tric_{data['nom']}.gcode", "w") as tric:
         tric.write(enTete(dim_y, dim_z))
+        tric.write("G0 Y0 Z0\n")  # Position de départ
 
         for lien in data["liens"]:
             # Création du parcours de tricotissage
