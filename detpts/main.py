@@ -225,8 +225,7 @@ def elodie1(image_init, epsilon = 0.1, afficher_squelette = False, afficher_cont
         -la liste des points de changements de pente de l'approximation, pour chaque groupe
     """
     # Charger l'image
-    image_pre_sym = cv2.imread("C:\\Users\\debri\\OneDrive\\Bureau\\ENSTA\\PIE\\premier_jet_python\\image.png",
-                               cv2.IMREAD_GRAYSCALE)
+    image_pre_sym = cv2.imread(image_init, cv2.IMREAD_GRAYSCALE)
     image = np.flipud(image_pre_sym)  # la position des aiguilles apparaît inversée en y sinon
     image = np.transpose(image)
     # Afficher l'image originale
@@ -268,8 +267,9 @@ def elodie1(image_init, epsilon = 0.1, afficher_squelette = False, afficher_cont
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #print_hi('PyCharm')
-    chemin = "C:\\Users\\debri\\OneDrive\\Bureau\\ENSTA\\PIE\\premier_jet_python\\image.png"
-    lx, ly, longueurs, pmpg = elodie1(chemin, epsilon=0.1, afficher_im_init=True, afficher_squelette=True)
-    elodie2.elodie2(pmpg, 0.5, 0, 0, [20, 10])
+    chemin = "C:\\Users\\debri\\OneDrive\\Bureau\\ENSTA\\PIE\\premier_jet_python\\4gpes.png"
+    lx, ly, longueurs, pmpg = elodie1(chemin, epsilon=0.01, afficher_im_init=False, afficher_squelette=False)
+    elodie2.elodie2(pmpg, 0.25, -100, -100, [10, 10, 10, 10], afficher_points_pre_scale=False)
+    #elodie2.elodie2(pmpg, 2, 0, 0, [50, 10], afficher_points_pre_scale=False)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
