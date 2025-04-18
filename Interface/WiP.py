@@ -4,7 +4,9 @@ from PIL import Image, ImageTk
 
 import sys
 sys.path.append('../src')
+sys.path.append('../detpts')
 from marq_tric import tricotissage, marquage
+# from elodie1 import elodie1
 
 PATH_YAML = "../yaml_files/"
 PATH_OUT = "../prgs_gcode/"
@@ -38,8 +40,10 @@ class Application:
 
         cell0 = tk.Frame(window, **grid_dict)
         cell0.grid(column=0,row=1)
+        tk.Label(cell0,text="Nom de projet",**button_dict).pack(pady=5)
         tk.Button(cell0,text="Sélection image", command=self.load_image,**button_dict).pack(pady=5)
         tk.Button(cell0,text="Détection du tracé",**button_dict).pack(pady=5)
+        # tk.Button(cell0,text="Détection du tracé", command=self.run_elodie1, **button_dict).pack(pady=5)
         
         self.canvas_width = 420
         self.canvas_height = 300
@@ -56,12 +60,13 @@ class Application:
         last_row = 9
 
         tk.Label(window,text="Enter yaml file name:").grid(column=0, row=last_row-2)
-        tk.Entry(window).grid(column=1, row=last_row-2)
+        self.entry = tk.Entry(window)
+        self.entry.grid(column=1, row=last_row-2)
         tk.Button(window, text="Générer Gcode tricotissage", 
-                  command=lambda: self.run_function(tricotissage), 
+                  command=lambda: self.create_file(tricotissage), 
                   **button_dict).grid(column=0, row=last_row-1,pady=5)
         tk.Button(window, text="Générer Gcode marquage", 
-                  command=lambda: self.run_function(marquage), 
+                  command=lambda: self.create_file(marquage), 
                   **button_dict).grid(column=1, row=last_row-1)
         self.message = tk.Label(window, text="", fg="green")
         self.message.grid(column=0, row=last_row, columnspan=2)
@@ -69,10 +74,15 @@ class Application:
         self.window.mainloop()
 
 
-    def run_function(self, func):
+    def create_file(self, func):
         nom_fichier = self.entry.get() or "file.yaml"
         result = func(PATH_YAML + nom_fichier)  # Appelle la fonction en argument
         self.message.config(text=f"{result}", fg="green")
+    
+    # def run_elodie1(self):
+        # lx, ly, longueurs, pmpg = elodie1(self.file_path, epsilon=0.01, 
+                                        #   afficher_im_init=False, 
+                                        #   afficher_squelette=False)
     
 
     def load_image(self):
