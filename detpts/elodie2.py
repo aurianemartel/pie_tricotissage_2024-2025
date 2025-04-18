@@ -3,11 +3,11 @@ des groupes, ainsi que des paramètres pour rescale la figure, renvoie la positi
 
 """REGARDER raffiner_approx_affine2"""
 import numpy as np
-from main import longueur_approx_morceaux
-from main import raffiner_approx_affine
+from auxiliaires import longueur_approx_morceaux
+from auxiliaires import afficher_points
 import matplotlib.pyplot as plt
 
-def raffiner_approx_affine2(points, n, enlever_extreme = False):
+def raffiner_approx_affine(points, n, enlever_extreme = False):
     """si points a été obtenu à partir de approx_morceaux, permet de placer n points équidistants sur la forme
     approximée; appelée par plot_aiguille,
     renvoie un tableau de points, traite un seul groupe à la fois
@@ -40,7 +40,7 @@ def raffiner_approx_affine2(points, n, enlever_extreme = False):
     #print("longueur_segment : ", longueur_segment, "\n")
     #print("longueur : ", longueur, "\n")
     while j < arret:
-        print(i,j)
+        #print(i,j)
         #print("i: ", i, "j : ", j, "debug_longueur_utilisee:", debug_longueur_utilisee, "longueur : ", longueur, "longueur_restante", longueur_restante, "longueur suivant-actuel : ", np.linalg.norm(actuel - suivant) )
         #print("Dans le gros while", "j : ", j)
         #print("i, j raffiner approx affine : ", i, j)
@@ -87,9 +87,9 @@ def pos_aiguilles(points_morceaux_par_gpe, n, seuil):
     aiguilles_par_gpe = []
     for i, points in enumerate(points_morceaux_par_gpe):
         if n[i] < seuil:
-            aiguilles_par_gpe.append(raffiner_approx_affine2(points,n[i], False))
+            aiguilles_par_gpe.append(raffiner_approx_affine(points,n[i], False))
         else:
-            aiguilles_par_gpe.append(raffiner_approx_affine2(points, n[i] + 2, True))
+            aiguilles_par_gpe.append(raffiner_approx_affine(points, n[i] + 2, True))
         """points_raffines = raffiner_approx_affine2(points,n[i])
         #print(points_raffines)
         j = 0
@@ -102,6 +102,8 @@ def pos_aiguilles(points_morceaux_par_gpe, n, seuil):
         """
     #print(aiguilles_par_gpe)
     return aiguilles_par_gpe
+
+
 
 def rescale(points_morceaux_par_gpe, scale_factor, offset_x, offset_y):
     """Destructif, points_morceaux_par_gpe est modifié"""
@@ -119,22 +121,6 @@ def rescale_aiguilles(aiguilles, scale_factor, offset_x, offset_y):
             aiguilles[i][j][0] = scale_factor * (aiguilles[i][j][0] + offset_x)
             aiguilles[i][j][1] = scale_factor * (aiguilles[i][j][1] + offset_y)
 
-def afficher_points(points_par_gpe):
-    for i_gpe in range(len(points_par_gpe)):
-        j = 0
-        #print("aiguilles_par_gpe : ", points_par_gpe)
-        for point in points_par_gpe[i_gpe]:
-            x = point[0]
-            y = point[1]
-            plt.scatter(x, y, color="red")  # Points rouges
-            plt.plot(x, y, linestyle="dashed", color="blue")  # Relie les points
-
-    plt.xlabel("X")
-    plt.ylabel("Y")
-    plt.axis("equal")
-    plt.title("Positions aiguilles")
-    plt.grid()
-    plt.show()
 
 def afficher_aiguilles(aiguilles_par_gpe):
     for i in range(len(aiguilles_par_gpe)):
