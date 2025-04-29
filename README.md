@@ -23,4 +23,4 @@ Les Programmes GCode peuvent être envoyés à la machine via le logiciel [UGS](
 - `yaml_files/` : Contient les fichiers correspondant aux schémas de tricotissage, au format YAML
 - `prgs_gcode/` : Contient les fichiers GCode à envoyer à la machine
 - `grbl/` : Contient les codes sources Grbl modifiés pour la machine (notamment pour l'ajout du servomoteur pour le marquage). Ce dossier doit être copié dans le répertoire des librairies d'Arduino IDE pour ensuite être envoyé à l'Arduino s'il s'agit d'une nouvelle carte Arduino.
-- Le fichier `TODO` contient les paramètres de la machine, à envoyer à l'Arduino via UGS s'il s'agit d'une nouvelle carte Arduino.
+- Le fichier `firmware_grbl.settings` contient les paramètres de la machine, à envoyer à l'Arduino via UGS s'il s'agit d'une nouvelle carte Arduino.
