@@ -13,6 +13,14 @@ from elodie1 import elodie1
 PATH_YAML = "../yaml_files/"
 PATH_OUT = "../prgs_gcode/"
 
+MIN_ZOOM = 0
+MAX_ZOOM = 2
+ZOOM_INTERVAL = 0.5
+MAX_OFFSETX_RATE = 1
+OFFSETX_INTERVAL = 0.25
+MAX_OFFSETY_RATE = 1
+OFFSETY_INTERVAL = 0.25
+
 class Application:
     def __init__(self, window, window_title):
         self.window = window
@@ -28,53 +36,47 @@ class Application:
         window.grid_columnconfigure(1, weight=1)
         window.grid_columnconfigure(2, weight=1)
 
-        button_dict = {"width":20, "height":1, "font": ("Arial", 10, "normal")}
-        grid_dict = {"padx":5, "pady":10}
+        self.button_dict = {"width":20, "height":1, "font": ("Arial", 10, "normal")}
+        self.grid_dict = {"padx":5, "pady":10}
 
         tk.Label(text="Tricotissage", font=("Arial", 20,"bold")).grid(row=0,column=0,columnspan=3)
 
         # Chargement image et detection des tracés
 
-        cell0 = tk.Frame(window, **grid_dict)
+        cell0 = tk.Frame(window, **self.grid_dict)
         cell0.grid(column=0,row=1)
-        tk.Label(cell0,text="Nom de projet",**button_dict).pack(pady=5)
+        tk.Label(cell0,text="Nom de projet",**self.button_dict).pack(pady=5)
         self.nom_projet_entry = tk.Entry(cell0)
         self.nom_projet_entry.pack(pady=5)
-        tk.Button(cell0,text="Sélection image", command=self.load_image,**button_dict).pack(pady=5)
-        # tk.Button(cell0,text="Détection du tracé",**button_dict).pack(pady=5)
-        tk.Button(cell0,text="Détection du tracé", command=self.run_elodie1, **button_dict).pack(pady=5)
+        tk.Button(cell0,text="Sélection image", command=self.load_image,**self.button_dict).pack(pady=5)
+        # tk.Button(cell0,text="Détection du tracé",**self.button_dict).pack(pady=5)
+        tk.Button(cell0,text="Détection du tracé", command=self.run_elodie1, **self.button_dict).pack(pady=5)
         
         self.canvas_width = 420
         self.canvas_height = 300
         self.margin = 0
 
-        self.canvas = tk.Canvas(window, width=self.canvas_width, 
-                                height=self.canvas_height)
-        self.canvas.grid(column=1, row=1, columnspan=2, **grid_dict)
+        self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)
+        self.canvas.grid(column=1, row=1, columnspan=2, **self.grid_dict)
 
         # Édition des points
-        self.cell3 = tk.Frame(window, **grid_dict)
-
         
-        tk.Button(self.cell3,text="Positions aiguilles", command=self.run_elodie2, **button_dict).pack(pady=15)
-
-
 
         # Génération des Gcodes
-        self.cell4 = tk.Frame(window, **grid_dict)
-        self.cell4.grid_rowconfigure(0, weight=1)
-        self.cell4.grid_rowconfigure(1, weight=0)
-        self.cell4.grid_columnconfigure(0, weight=1)
-        self.cell4.grid_columnconfigure(1, weight=1)
-        self.cell4.grid_columnconfigure(2, weight=1)
+        self.cell5 = tk.Frame(window, **self.grid_dict)
+        self.cell5.grid_rowconfigure(0, weight=1)
+        self.cell5.grid_rowconfigure(1, weight=0)
+        self.cell5.grid_columnconfigure(0, weight=1)
+        self.cell5.grid_columnconfigure(1, weight=1)
+        self.cell5.grid_columnconfigure(2, weight=1)
 
-        tk.Button(self.cell4, text="Générer Gcode tricotissage", 
+        tk.Button(self.cell5, text="Générer Gcode tricotissage", 
                   command=lambda: self.create_file(tricotissage), 
-                  **button_dict).grid(row=0,column=0,pady=5)
-        tk.Button(self.cell4, text="Générer Gcode marquage", 
+                  **self.button_dict).grid(row=0,column=0,pady=5)
+        tk.Button(self.cell5, text="Générer Gcode marquage", 
                   command=lambda: self.create_file(marquage), 
-                  **button_dict).grid(row=0,column=1,pady=5)
-        self.message = tk.Label(self.cell4, text="", fg="green")
+                  **self.button_dict).grid(row=0,column=1,pady=5)
+        self.message = tk.Label(self.cell5, text="", fg="green")
         self.message.grid(row=1,column=0,pady=5)
 
         self.window.mainloop()
@@ -86,14 +88,44 @@ class Application:
         self.message.config(text=f"{result}", fg="green")
     
     def run_elodie1(self):
-        lx, ly, longueurs, pmpg = elodie1(self.file_path, epsilon=0.01, 
+        lx, ly, longueurs, self.pmpg = elodie1(self.file_path, epsilon=0.01, 
                                           afficher_im_init=False, 
                                           afficher_squelette=False)
-        self.cell3.grid(column=0, row=2, columnspan=3)
+        
+        self.show_edit_points()
         print("Tracé detecté")
     
+    def show_edit_points(self):
+
+        cell3 = tk.Frame(self.window, **self.grid_dict)
+
+        x_min, x_max, y_min, y_max = self.min_max_pmpg()
+        tk.Label(cell3, text=f"x_min = {x_min}", **self.button_dict).pack(pady=5)
+        tk.Label(cell3, text=f"x_max = {x_max}", **self.button_dict).pack(pady=5)
+        tk.Label(cell3, text=f"y_min = {y_min}", **self.button_dict).pack(pady=5)
+        tk.Label(cell3, text=f"y_max = {y_max}", **self.button_dict).pack(pady=5)
+        cell3.grid(column=0, row=2)
+
+        cell4 = tk.Frame(self.window, **self.grid_dict)
+
+        self.zoom = tk.Scale(cell4, from_=MIN_ZOOM, to=MAX_ZOOM, tickinterval=ZOOM_INTERVAL, 
+                             resolution=0.01, length=self.canvas_width, orient="horizontal")
+        self.zoom.pack(pady=5)
+        self.offset_x = tk.Scale(cell4, from_=-1*x_min, to=MAX_OFFSETX_RATE*x_max, 
+                                 tickinterval=OFFSETX_INTERVAL, length=self.canvas_width, orient="horizontal")
+        self.offset_x.pack(pady=5)
+        self.offset_y = tk.Scale(cell4, from_=-1*y_min, to=MAX_OFFSETY_RATE*y_max, 
+                                 tickinterval=OFFSETY_INTERVAL, length=self.canvas_width, orient="horizontal")
+        self.offset_y.pack(pady=5)
+
+        cell4.grid(column=1, row=2, columnspan=2)
+
+        # tk.Button(self.cell3,text="Positions aiguilles", 
+        #           command=self.run_elodie2, **self.button_dict).grid(row=2, column=0)
+
+    
     def run_elodie2(self):
-        self.cell4.grid(column=0, row=3, columnspan=3)
+        self.cell5.grid(column=0, row=4, columnspan=3)
         print("Points déterminés")
 
     def load_image(self):
@@ -127,6 +159,22 @@ class Application:
 
         new_size = (int(img_width * ratio), int(img_height * ratio))
         return image.resize(new_size, Image.Resampling.LANCZOS)
+    
+    def min_max_pmpg(self):
+        x_min, x_max, y_min, y_max = 5000, 0, 5000, 0
+        for i in range(len(self.pmpg)):
+            for j in range(len(self.pmpg[i])):
+                x = self.pmpg[i][j][0]
+                y = self.pmpg[i][j][1]
+                if x < x_min:
+                    x_min = x
+                if x > x_max:
+                    x_max = x
+                if y < y_min:
+                    y_min = y
+                if y > y_max:
+                    y_max = y
+        return x_min, x_max, y_min, y_max
 
 
 # Launch the app
