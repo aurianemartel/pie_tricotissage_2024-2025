@@ -23,19 +23,23 @@ PATH_YAML = "../yaml_files/"  # Chemin de lecture des fichiers yaml
 VERBOSE = False  # True pour les affichage de débuggage
 
 # Taille de la zone de travail de la machine
-MAX_Y = 350  # TODO , 375 ?
+MAX_Y = 355
 MIN_Y = 0
-MAX_Z = 600
+MAX_Z = 675
 MIN_Z = 0
 
+# Paramètres de la position du crayon par rapport à la buse de tricotissage
+OFFSET_Y = 27
+OFFSET_Z = -59
 
-def enTete(dim_y, dim_z):
+
+def enTete(dim_y, dim_z, feed_rate=1000):
     return f"""G21 ; Definir les unites en millimetres
 G90 ; Positionnement absolu
 G19 ; YZ plan
 G40
 G49
-F10000
+F{feed_rate} ; Vitesse de déplacement, max=20000
 
 """
 
@@ -88,34 +92,40 @@ def G23(yi, zi, yf, zf, cy, cz, sens):
 # TODO : prendre en compte le décalage entre le crayon et la buse de tricotissage
 
 
-def marquage(yamlFile, offset_x=0, offset_y=0):
+def marquage(yamlFile, offset_y=None, offset_z=None):
     """
     Crée le fichier gcode de marquage associé au patron décrit dans le fichier yaml en argument.
     les valeurs d'offset_x et offset_y sont les décalages entre la position de la buse et celle du crayon.
     """
+    if offset_y is None:
+        offset_y = OFFSET_Y
+    if offset_z is None:
+        offset_z = OFFSET_Z
+
     with open(yamlFile, "r") as file:
         data = yaml.safe_load(file)
     with open(PATH_OUT + f"marq_{data['nom']}.gcode", "w") as marq:
         dim_y, dim_z = data["dimensions"]
-        marq.write(enTete(dim_y, dim_z))
+        marq.write(enTete(dim_y, dim_z, 20000))
         marq.write("M5 S1000\n\n")  # Activer le moteur
         for i, groupe in enumerate(data["groupes"]):
             for j, point in enumerate(data["groupes"][groupe]):
                 py, pz = point
                 if (
-                    py + offset_x > MAX_Y
-                    or py + offset_x < MIN_Y
-                    or pz + offset_y > MAX_Z
-                    or pz + offset_y < MIN_Z
+                    py - offset_y > MAX_Y
+                    or py - offset_y < MIN_Y
+                    or pz - offset_z > MAX_Z
+                    or pz - offset_z < MIN_Z
                 ):
                     raise ValueError(
                         "Problème : coordonnées hors limites, avez vous pris en compte que le crayon est décalé par rapport à la buse ?"
                     )
-                marq.write(G0(py + offset_x, pz + offset_y))
+                marq.write(G0(py - offset_y, pz - offset_z))
                 if i == 0 and j == 0:
                     # Pour la première aiguille, on attend que le crayon soit installé
                     marq.write("\nM0\n")
-                marq.write("\nM3\nG4 P1 \nM5\n\n")  # Descendre et relever crayon
+                # Descendre et relever crayon
+                marq.write("\nM3\nG4 P0.5 \nM5\nG4 P0.5 \n\n")
         marq.write("G0 Y50 Z100\nG0 Y50 Z0\nG0 Y0 Z0\n")
     print(f"Fichier marq_{data['nom']}.gcode généré avec succès")
 
@@ -419,7 +429,7 @@ def tricotissage(yamlFile):
 
     with open(PATH_OUT + f"tric_{data['nom']}.gcode", "w") as tric:
         tric.write(enTete(dim_y, dim_z))
-        tric.write("G0 Y0 Z0\n")  # Position de départ
+        tric.write("G1 Y0 Z0\n")  # Position de départ
 
         for lien in data["liens"]:
             # Création du parcours de tricotissage

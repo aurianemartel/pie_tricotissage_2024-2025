@@ -34,14 +34,14 @@
     },
     {
       "key": "$11",
-      "value": "0.010",
+      "value": "0.5",
       "units": "millimeters",
       "description": "Sets how fast Grbl travels through consecutive motions. Lower value slows it down.",
       "shortDescription": "Junction deviation"
     },
     {
       "key": "$12",
-      "value": "0.500",
+      "value": "0.01",
       "units": "millimeters",
       "description": "Sets the G2 and G3 arc tracing accuracy based on radial error. Beware: A very small value may effect performance.",
       "shortDescription": "Arc tolerance"
