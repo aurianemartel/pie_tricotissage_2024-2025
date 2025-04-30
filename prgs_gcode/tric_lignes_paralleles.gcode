@@ -3,9 +3,9 @@ G90 ; Positionnement absolu
 G19 ; YZ plan
 G40
 G49
-F5000
+F1000 ; Vitesse de déplacement, max=20000
 
-G0 Y0 Z0
+G1 Y0 Z0
 G1 Y40.0 Z50.0
 M0
 

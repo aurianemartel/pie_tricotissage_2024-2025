@@ -427,6 +427,14 @@ def tricotissage(yamlFile):
     dim_y, dim_z = data["dimensions"]
     epsilon = data["epsilon"]
 
+    # On récupère toutes les aiguilles
+    liste_aiguilles = []
+    for groupe in data["groupes"]:
+        for aiguille in data["groupes"][groupe]:
+            if aiguille not in liste_aiguilles:
+                # On ne garde pas les doublons (si deux aiguilles dans des groupes différents ont la même position)
+                liste_aiguilles.append(aiguille)
+
     with open(PATH_OUT + f"tric_{data['nom']}.gcode", "w") as tric:
         tric.write(enTete(dim_y, dim_z))
         tric.write("G1 Y0 Z0\n")  # Position de départ
@@ -434,7 +442,6 @@ def tricotissage(yamlFile):
         for lien in data["liens"]:
             # Création du parcours de tricotissage
             prc = parcours(data["groupes"][lien[0]], data["groupes"][lien[1]])
-            liste_aiguilles = data["groupes"][lien[0]] + data["groupes"][lien[1]]
             tric.write(trace(prc, epsilon, liste_aiguilles))
 
     print(f"Fichier tric_{data['nom']}.gcode généré avec succès")
