@@ -1,5 +1,7 @@
 # PIE Tricotissage 2024-2025
 
+![machine](images/machine.jpg)
+
 #### Membres de l'équipe 
 
 - Mohamed Salim Ben Noomen
