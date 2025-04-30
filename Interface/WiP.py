@@ -17,9 +17,7 @@ MIN_ZOOM = 0
 MAX_ZOOM = 2
 ZOOM_INTERVAL = 0.5
 MAX_OFFSETX_RATE = 1
-OFFSETX_INTERVAL = 0.25
 MAX_OFFSETY_RATE = 1
-OFFSETY_INTERVAL = 0.25
 
 class Application:
     def __init__(self, window, window_title):
@@ -37,6 +35,7 @@ class Application:
         window.grid_columnconfigure(2, weight=1)
 
         self.button_dict = {"width":20, "height":1, "font": ("Arial", 10, "normal")}
+        self.text_dict = {"font": ("Arial", 10, "normal")}
         self.grid_dict = {"padx":5, "pady":10}
 
         tk.Label(text="Tricotissage", font=("Arial", 20,"bold")).grid(row=0,column=0,columnspan=3)
@@ -44,8 +43,8 @@ class Application:
         # Chargement image et detection des tracés
 
         cell0 = tk.Frame(window, **self.grid_dict)
-        cell0.grid(column=0,row=1)
-        tk.Label(cell0,text="Nom de projet",**self.button_dict).pack(pady=5)
+        cell0.grid(row=1, column=0)
+        tk.Label(cell0,text="Nom de projet",**self.text_dict).pack(pady=5)
         self.nom_projet_entry = tk.Entry(cell0)
         self.nom_projet_entry.pack(pady=5)
         tk.Button(cell0,text="Sélection image", command=self.load_image,**self.button_dict).pack(pady=5)
@@ -57,7 +56,7 @@ class Application:
         self.margin = 0
 
         self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)
-        self.canvas.grid(column=1, row=1, columnspan=2, **self.grid_dict)
+        self.canvas.grid(row=1, column=1, columnspan=2, **self.grid_dict)
 
         # Édition des points
         
@@ -97,28 +96,30 @@ class Application:
     
     def show_edit_points(self):
 
-        cell3 = tk.Frame(self.window, **self.grid_dict)
+        self.xy_span = self.min_max_pmpg()
+        x_min, x_max, y_min, y_max = self.xy_span
+        self.text_xy = tk.Label(self.window, 
+                                  text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}", 
+                                  **self.text_dict)
+        self.text_xy.grid(row=2, column=0, columnspan=3)
 
-        x_min, x_max, y_min, y_max = self.min_max_pmpg()
-        tk.Label(cell3, text=f"x_min = {x_min}", **self.button_dict).pack(pady=5)
-        tk.Label(cell3, text=f"x_max = {x_max}", **self.button_dict).pack(pady=5)
-        tk.Label(cell3, text=f"y_min = {y_min}", **self.button_dict).pack(pady=5)
-        tk.Label(cell3, text=f"y_max = {y_max}", **self.button_dict).pack(pady=5)
-        cell3.grid(column=0, row=2)
+        tk.Label(self.window, text="Zoom :", **self.text_dict).grid(row=3, column=0)
+        self.zoom = tk.Scale(self.window, from_=MIN_ZOOM, to=MAX_ZOOM, tickinterval=ZOOM_INTERVAL, 
+                             command=self.set_x_y_zoom, resolution=0.01, length=self.canvas_width, 
+                             orient="horizontal")
+        self.zoom.set(1)
+        self.zoom.grid(row=3, column=1, columnspan=2)
 
-        cell4 = tk.Frame(self.window, **self.grid_dict)
+        tk.Label(self.window, text="Offset en x :", **self.text_dict).grid(row=4, column=0)
+        self.offset_x = tk.Scale(self.window, from_=-1*x_min, to=MAX_OFFSETX_RATE*x_max, tickinterval=(x_max-x_min)//5, 
+                                 command=self.set_x_offset, length=self.canvas_width, orient="horizontal")
+        self.offset_x.grid(row=4, column=1, columnspan=2)
 
-        self.zoom = tk.Scale(cell4, from_=MIN_ZOOM, to=MAX_ZOOM, tickinterval=ZOOM_INTERVAL, 
-                             resolution=0.01, length=self.canvas_width, orient="horizontal")
-        self.zoom.pack(pady=5)
-        self.offset_x = tk.Scale(cell4, from_=-1*x_min, to=MAX_OFFSETX_RATE*x_max, 
-                                 tickinterval=OFFSETX_INTERVAL, length=self.canvas_width, orient="horizontal")
-        self.offset_x.pack(pady=5)
-        self.offset_y = tk.Scale(cell4, from_=-1*y_min, to=MAX_OFFSETY_RATE*y_max, 
-                                 tickinterval=OFFSETY_INTERVAL, length=self.canvas_width, orient="horizontal")
-        self.offset_y.pack(pady=5)
+        tk.Label(self.window, text="Offset en y :", **self.text_dict).grid(row=5, column=0)        
+        self.offset_y = tk.Scale(self.window, from_=-1*y_min, to=MAX_OFFSETY_RATE*y_max, tickinterval=(y_max-y_min)//5, 
+                                 command=self.set_y_offset, length=self.canvas_width, orient="horizontal")
+        self.offset_y.grid(row=5, column=1, columnspan=2)
 
-        cell4.grid(column=1, row=2, columnspan=2)
 
         # tk.Button(self.cell3,text="Positions aiguilles", 
         #           command=self.run_elodie2, **self.button_dict).grid(row=2, column=0)
@@ -161,7 +162,7 @@ class Application:
         return image.resize(new_size, Image.Resampling.LANCZOS)
     
     def min_max_pmpg(self):
-        x_min, x_max, y_min, y_max = 5000, 0, 5000, 0
+        x_min, x_max, y_min, y_max = 10000, 0, 10000, 0
         for i in range(len(self.pmpg)):
             for j in range(len(self.pmpg[i])):
                 x = self.pmpg[i][j][0]
@@ -175,6 +176,43 @@ class Application:
                 if y > y_max:
                     y_max = y
         return x_min, x_max, y_min, y_max
+    
+    def set_x_y_zoom(self, val):
+        x_min, x_max, y_min, y_max = self.xy_span
+        zoom_val = float(val)
+        offset_x_val = self.offset_x.get()
+        offset_y_val = self.offset_y.get()
+        x_min = int(zoom_val*x_min) + offset_x_val
+        x_max = int(zoom_val*x_max) + offset_x_val
+        y_min = int(zoom_val*y_min) + offset_y_val
+        y_max = int(zoom_val*y_max) + offset_y_val
+        self.text_xy.configure(text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
+        self.offset_x.configure(from_=-1*x_min, to=MAX_OFFSETX_RATE*x_max, tickinterval=(x_max-x_min)//5)
+        self.offset_y.configure(from_=-1*y_min, to=MAX_OFFSETY_RATE*y_max, tickinterval=(y_max-y_min)//5)
+    
+    def set_x_offset(self, val):
+        x_min, x_max, y_min, y_max = self.xy_span
+        zoom_val = self.zoom.get()
+        offset_x_val = int(val)
+        offset_y_val = self.offset_y.get()
+        x_min = int(zoom_val*x_min) + offset_x_val
+        x_max = int(zoom_val*x_max) + offset_x_val
+        y_min = int(zoom_val*y_min) + offset_y_val
+        y_max = int(zoom_val*y_max) + offset_y_val
+        # self.xy_span = x_min, x_max, y_min, y_max
+        self.text_xy.configure(text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
+
+    def set_y_offset(self, val):
+        x_min, x_max, y_min, y_max = self.xy_span
+        zoom_val = self.zoom.get()
+        offset_x_val = self.offset_x.get()
+        offset_y_val = int(val)
+        x_min = int(zoom_val*x_min) + offset_x_val
+        x_max = int(zoom_val*x_max) + offset_x_val
+        y_min = int(zoom_val*y_min) + offset_y_val
+        y_max = int(zoom_val*y_max) + offset_y_val
+        # self.xy_span = x_min, x_max, y_min, y_max
+        self.text_xy.configure(text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
 
 
 # Launch the app
