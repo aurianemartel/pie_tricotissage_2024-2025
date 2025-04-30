@@ -3,10 +3,12 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 
 import sys
+
 sys.path.append('../src')
-sys.path.append('../detpts')
 from marq_tric import tricotissage, marquage
-# from elodie1 import elodie1
+
+sys.path.append('../detpts')
+from elodie1 import elodie1
 
 PATH_YAML = "../yaml_files/"
 PATH_OUT = "../prgs_gcode/"
@@ -21,12 +23,7 @@ class Application:
         window.grid_rowconfigure(1, weight=0)
         window.grid_rowconfigure(2, weight=0)
         window.grid_rowconfigure(3, weight=0)
-        window.grid_rowconfigure(4, weight=0)
-        window.grid_rowconfigure(5, weight=0)
-        window.grid_rowconfigure(6, weight=0)
-        window.grid_rowconfigure(7, weight=1)
-        window.grid_rowconfigure(8, weight=0)
-        window.grid_rowconfigure(9, weight=0)
+        window.grid_rowconfigure(4, weight=1)
         window.grid_columnconfigure(0, weight=1)
         window.grid_columnconfigure(1, weight=1)
         window.grid_columnconfigure(2, weight=1)
@@ -41,9 +38,11 @@ class Application:
         cell0 = tk.Frame(window, **grid_dict)
         cell0.grid(column=0,row=1)
         tk.Label(cell0,text="Nom de projet",**button_dict).pack(pady=5)
+        self.nom_projet_entry = tk.Entry(cell0)
+        self.nom_projet_entry.pack(pady=5)
         tk.Button(cell0,text="Sélection image", command=self.load_image,**button_dict).pack(pady=5)
-        tk.Button(cell0,text="Détection du tracé",**button_dict).pack(pady=5)
-        # tk.Button(cell0,text="Détection du tracé", command=self.run_elodie1, **button_dict).pack(pady=5)
+        # tk.Button(cell0,text="Détection du tracé",**button_dict).pack(pady=5)
+        tk.Button(cell0,text="Détection du tracé", command=self.run_elodie1, **button_dict).pack(pady=5)
         
         self.canvas_width = 420
         self.canvas_height = 300
@@ -54,43 +53,55 @@ class Application:
         self.canvas.grid(column=1, row=1, columnspan=2, **grid_dict)
 
         # Édition des points
-        tk.Button(window,text="Positions aiguilles", **button_dict).grid(column= 0, row=2,pady=15)
+        self.cell3 = tk.Frame(window, **grid_dict)
+
+        
+        tk.Button(self.cell3,text="Positions aiguilles", command=self.run_elodie2, **button_dict).pack(pady=15)
+
+
 
         # Génération des Gcodes
-        last_row = 9
+        self.cell4 = tk.Frame(window, **grid_dict)
+        self.cell4.grid_rowconfigure(0, weight=1)
+        self.cell4.grid_rowconfigure(1, weight=0)
+        self.cell4.grid_columnconfigure(0, weight=1)
+        self.cell4.grid_columnconfigure(1, weight=1)
+        self.cell4.grid_columnconfigure(2, weight=1)
 
-        tk.Label(window,text="Enter yaml file name:").grid(column=0, row=last_row-2)
-        self.entry = tk.Entry(window)
-        self.entry.grid(column=1, row=last_row-2)
-        tk.Button(window, text="Générer Gcode tricotissage", 
+        tk.Button(self.cell4, text="Générer Gcode tricotissage", 
                   command=lambda: self.create_file(tricotissage), 
-                  **button_dict).grid(column=0, row=last_row-1,pady=5)
-        tk.Button(window, text="Générer Gcode marquage", 
+                  **button_dict).grid(row=0,column=0,pady=5)
+        tk.Button(self.cell4, text="Générer Gcode marquage", 
                   command=lambda: self.create_file(marquage), 
-                  **button_dict).grid(column=1, row=last_row-1)
-        self.message = tk.Label(window, text="", fg="green")
-        self.message.grid(column=0, row=last_row, columnspan=2)
+                  **button_dict).grid(row=0,column=1,pady=5)
+        self.message = tk.Label(self.cell4, text="", fg="green")
+        self.message.grid(row=1,column=0,pady=5)
 
         self.window.mainloop()
 
 
     def create_file(self, func):
-        nom_fichier = self.entry.get() or "file.yaml"
+        nom_fichier = self.nom_projet_entry.get() or "file.yaml"
         result = func(PATH_YAML + nom_fichier)  # Appelle la fonction en argument
         self.message.config(text=f"{result}", fg="green")
     
-    # def run_elodie1(self):
-        # lx, ly, longueurs, pmpg = elodie1(self.file_path, epsilon=0.01, 
-                                        #   afficher_im_init=False, 
-                                        #   afficher_squelette=False)
+    def run_elodie1(self):
+        lx, ly, longueurs, pmpg = elodie1(self.file_path, epsilon=0.01, 
+                                          afficher_im_init=False, 
+                                          afficher_squelette=False)
+        self.cell3.grid(column=0, row=2, columnspan=3)
+        print("Tracé detecté")
     
+    def run_elodie2(self):
+        self.cell4.grid(column=0, row=3, columnspan=3)
+        print("Points déterminés")
 
     def load_image(self):
-        file_path = filedialog.askopenfilename()
-        if not file_path:
+        self.file_path = filedialog.askopenfilename()
+        if not self.file_path:
             return
 
-        self.new_img = Image.open(file_path)
+        self.new_img = Image.open(self.file_path)
         self.resized_img = self.resize_image_to_fit(self.new_img)
         self.pic = ImageTk.PhotoImage(self.resized_img)
 

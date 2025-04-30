@@ -8,7 +8,7 @@ import numpy as np
 import scipy.ndimage as ndi     #convolution : permet de déterminer les extrémités du squelette
 import matplotlib.pyplot as plt
 from skimage.morphology import skeletonize
-from aux import longueur_approx_morceaux
+from auxiliaires import longueur_approx_morceaux
 
 def norme_carre(vecteur):      #norme au carré d'un vecteur de dimension 2
     return(vecteur[0] ** 2 + vecteur[1] ** 2)
