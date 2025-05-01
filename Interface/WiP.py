@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import ttk
 from PIL import Image, ImageTk
 
 import sys
@@ -25,11 +26,15 @@ class Application:
         self.window.title(window_title)
         self.image_path = ""
 
-        window.grid_rowconfigure(0, weight=0)
-        window.grid_rowconfigure(1, weight=0)
-        window.grid_rowconfigure(2, weight=0)
-        window.grid_rowconfigure(3, weight=0)
+        window.grid_rowconfigure(0, weight=1)
+        window.grid_rowconfigure(1, weight=1)
+        window.grid_rowconfigure(2, weight=1)
+        window.grid_rowconfigure(3, weight=1)
         window.grid_rowconfigure(4, weight=1)
+        window.grid_rowconfigure(5, weight=1)
+        window.grid_rowconfigure(6, weight=1)
+        window.grid_rowconfigure(7, weight=1)
+        window.grid_rowconfigure(8, weight=1)
         window.grid_columnconfigure(0, weight=1)
         window.grid_columnconfigure(1, weight=1)
         window.grid_columnconfigure(2, weight=1)
@@ -96,37 +101,42 @@ class Application:
     
     def show_edit_points(self):
 
+        ttk.Separator(self.window,orient='horizontal').grid(row=2, column=0, columnspan=3, sticky="ew")
+
         self.xy_span = self.min_max_pmpg()
         x_min, x_max, y_min, y_max = self.xy_span
         self.text_xy = tk.Label(self.window, 
                                   text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}", 
                                   **self.text_dict)
-        self.text_xy.grid(row=2, column=0, columnspan=3)
+        self.text_xy.grid(row=3, column=0, columnspan=3)
 
-        tk.Label(self.window, text="Zoom :", **self.text_dict).grid(row=3, column=0)
+        tk.Label(self.window, text="Zoom :", **self.text_dict).grid(row=4, column=0)
         self.zoom = tk.Scale(self.window, from_=MIN_ZOOM, to=MAX_ZOOM, tickinterval=ZOOM_INTERVAL, 
                              command=self.set_x_y_zoom, resolution=0.01, length=self.canvas_width, 
                              orient="horizontal")
         self.zoom.set(1)
-        self.zoom.grid(row=3, column=1, columnspan=2)
+        self.zoom.grid(row=4, column=1, columnspan=2)
 
-        tk.Label(self.window, text="Offset en x :", **self.text_dict).grid(row=4, column=0)
+        tk.Label(self.window, text="Offset en x :", **self.text_dict).grid(row=5, column=0)
         self.offset_x = tk.Scale(self.window, from_=-1*x_min, to=MAX_OFFSETX_RATE*x_max, tickinterval=(x_max-x_min)//5, 
                                  command=self.set_x_offset, length=self.canvas_width, orient="horizontal")
-        self.offset_x.grid(row=4, column=1, columnspan=2)
+        self.offset_x.grid(row=5, column=1, columnspan=2)
 
-        tk.Label(self.window, text="Offset en y :", **self.text_dict).grid(row=5, column=0)        
+        tk.Label(self.window, text="Offset en y :", **self.text_dict).grid(row=6, column=0)        
         self.offset_y = tk.Scale(self.window, from_=-1*y_min, to=MAX_OFFSETY_RATE*y_max, tickinterval=(y_max-y_min)//5, 
                                  command=self.set_y_offset, length=self.canvas_width, orient="horizontal")
-        self.offset_y.grid(row=5, column=1, columnspan=2)
+        self.offset_y.grid(row=6, column=1, columnspan=2)
 
-
-        # tk.Button(self.cell3,text="Positions aiguilles", 
-        #           command=self.run_elodie2, **self.button_dict).grid(row=2, column=0)
+        ttk.Separator(self.window,orient='horizontal').grid(row=7, column=0, columnspan=3, sticky="ew")
+        tk.Label(self.window, text="Points par groupe", **self.text_dict).grid(row=8, column=0, pady=5)
+        self.pts_per_group = tk.Entry(self.window)
+        self.pts_per_group.grid(row=8, column=1)
+        tk.Button(self.window,text="Valider", 
+                   command=self.run_elodie2, **self.button_dict).grid(row=8, column=2)
 
     
     def run_elodie2(self):
-        self.cell5.grid(column=0, row=4, columnspan=3)
+        # self.cell5.grid(column=0, row=4, columnspan=3)
         print("Points déterminés")
 
     def load_image(self):
