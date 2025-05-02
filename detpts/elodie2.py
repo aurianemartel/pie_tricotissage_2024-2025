@@ -7,6 +7,8 @@ from auxiliaires import longueur_approx_morceaux
 from auxiliaires import afficher_points
 import matplotlib.pyplot as plt
 
+PATH_INTERFACE = "../figures/"
+
 def raffiner_approx_affine(points, n, enlever_extreme = False):
     """si points a été obtenu à partir de approx_morceaux, permet de placer n points équidistants sur la forme
     approximée; appelée par plot_aiguille,
@@ -43,7 +45,7 @@ def raffiner_approx_affine(points, n, enlever_extreme = False):
         #print(i,j)
         #print("i: ", i, "j : ", j, "debug_longueur_utilisee:", debug_longueur_utilisee, "longueur : ", longueur, "longueur_restante", longueur_restante, "longueur suivant-actuel : ", np.linalg.norm(actuel - suivant) )
         #print("Dans le gros while", "j : ", j)
-        #print("i, j raffiner approx affine : ", i, j)
+        print("i, j raffiner approx affine : ", i, j)
         if (np.linalg.norm(actuel - suivant) >= longueur_restante):   #on a la place de rajouter un point sur ce morceau
             #print("Dans le if")
             actuel += longueur_restante * direction
@@ -122,19 +124,24 @@ def rescale_aiguilles(aiguilles, scale_factor, offset_x, offset_y):
             aiguilles[i][j][1] = scale_factor * (aiguilles[i][j][1] + offset_y)
 
 
-def afficher_aiguilles(aiguilles_par_gpe):
+def afficher_aiguilles(aiguilles_par_gpe, filename):
+    indice = [(7* i % 20) for i in range(len(aiguilles_par_gpe))]
+    cmap = plt.cm.get_cmap('tab20')
+    couleur = [cmap(i) for i in indice]
+    print(len(aiguilles_par_gpe))
     for i in range(len(aiguilles_par_gpe)):
-        for j in range(len(aiguilles_par_gpe[i])):
-            x = aiguilles_par_gpe[i][j][0]
-            y = aiguilles_par_gpe[i][j][1]
-            plt.scatter(x, y, color="red")  # Points rouges
-            plt.plot(x, y, linestyle="dashed", color="blue")  # Relie les points
+        x = [aiguilles_par_gpe[i][j][0] for j in range(len(aiguilles_par_gpe[i]))]
+        y = [aiguilles_par_gpe[i][j][1] for j in range(len(aiguilles_par_gpe[i]))]
+        plt.scatter(x, y, color=couleur[i], label=f"Groupe{i+1}")
+        plt.plot(x, y, linestyle="dashed", color=couleur[i])  # Relie les points
 
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.axis("equal")
     plt.title("Positions aiguilles")
     plt.grid()
+    plt.legend()
+    plt.savefig(PATH_INTERFACE + filename)
     plt.show()
 
 
@@ -159,5 +166,5 @@ def elodie2(points_morceaux_par_gpe, scale_factor, offset_x, offset_y, n, affich
     #print("rescale effectue")
     aiguilles_par_gpe = pos_aiguilles(points_morceaux_par_gpe, n, seuil)
     rescale_aiguilles(aiguilles_par_gpe, scale_factor, offset_x, offset_y)
-    afficher_aiguilles(aiguilles_par_gpe)
+    afficher_aiguilles(aiguilles_par_gpe, "figure.png")
     return aiguilles_par_gpe
