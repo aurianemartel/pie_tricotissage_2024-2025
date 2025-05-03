@@ -19,8 +19,6 @@ def afficher_points(points_par_gpe):
     Permet d'afficher l'output d'elodie1
     """
     for i_gpe in range(len(points_par_gpe)):
-        j = 0
-        #print("aiguilles_par_gpe : ", points_par_gpe)
         for point in points_par_gpe[i_gpe]:
             x = point[0]
             y = point[1]
