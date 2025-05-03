@@ -12,7 +12,7 @@ PATH_INTERFACE = "../figures/"
 def raffiner_approx_affine(points, n, enlever_extreme = False):
     """si points a été obtenu à partir de approx_morceaux, permet de placer n points équidistants sur la forme
     approximée; appelée par plot_aiguille,
-    renvoie un tableau de points, traite un seul groupe à la fois
+    renvoie un tableau de points et la distance entre les points, traite un seul groupe à la fois
     Le premier et le dernier point de points seront forcément mis dans le """
     longueur = longueur_approx_morceaux(points)         #longueur totale du contour
     longueur_segment = np.float64(longueur) / (n-1)             #longueur entre deux aiguilles consécutives
@@ -47,19 +47,25 @@ def raffiner_approx_affine(points, n, enlever_extreme = False):
             direction = (suivant - actuel) / np.linalg.norm(suivant - actuel)
     if np.linalg.norm(suivant - actuel) != 0 and not enlever_extreme:  #on force l'ajout du dernier point
         nouveaux_points.append(points[-1])
-    return nouveaux_points
+    return nouveaux_points, longueur_segment
 
 
 def pos_aiguilles(points_morceaux_par_gpe, n, seuil):
     """Renvoie la position des aiguilles avec n points par groupe (n tableau, peu différer pour chaque groupe)
     sous la forme d'un tableau tab tel que tab[i] """
     aiguilles_par_gpe = []
+    longueur_min = 1000
     for i, points in enumerate(points_morceaux_par_gpe):
         if n[i] < seuil:
-            aiguilles_par_gpe.append(raffiner_approx_affine(points,n[i], False))
+            nouv_points, longueur = raffiner_approx_affine(points,n[i], False)
         else:
-            aiguilles_par_gpe.append(raffiner_approx_affine(points, n[i] + 2, True))
-    return aiguilles_par_gpe
+            nouv_points, longueur = raffiner_approx_affine(points, n[i] + 2, True)
+        aiguilles_par_gpe.append(nouv_points)
+        if i == 1:
+            longueur_min = longueur
+        if longueur < longueur_min:
+            longueur_min = longueur
+    return aiguilles_par_gpe,longueur_min
 
 
 
@@ -113,7 +119,8 @@ def generer_pos_aiguilles(points_morceaux_par_gpe, scale_factor, offset_x, offse
     """
     if afficher_points_pre_scale:
         afficher_points(points_morceaux_par_gpe)
-    aiguilles_par_gpe = pos_aiguilles(points_morceaux_par_gpe, n, seuil)
+    aiguilles_par_gpe, longueur_min = pos_aiguilles(points_morceaux_par_gpe, n, seuil)
     rescale_aiguilles(aiguilles_par_gpe, scale_factor, offset_x, offset_y)
+    longueur_min *= scale_factor
     afficher_aiguilles(aiguilles_par_gpe, filename)
-    return aiguilles_par_gpe
+    return aiguilles_par_gpe, longueur_min
