@@ -9,8 +9,8 @@ sys.path.append('../src')
 from marq_tric import tricotissage, marquage
 
 sys.path.append('../detpts')
-from elodie1 import elodie1
-from elodie2 import elodie2
+from det_trace import detection_trace
+from generer_pos_aig import generer_pos_aiguilles
 
 PATH_YAML = "../yaml_files/"
 PATH_OUT = "../prgs_gcode/"
@@ -102,7 +102,7 @@ class Application:
 
         ttk.Separator(self.window,orient='horizontal').grid(row=2, column=0, columnspan=3, sticky="ew")
 
-        lx, ly, longueurs, self.pmpg = elodie1(self.file_path, epsilon=0.01, 
+        lx, ly, longueurs, self.pmpg = detection_trace(self.file_path, epsilon=0.01, 
                                           afficher_im_init=False, 
                                           afficher_squelette=False)
 
@@ -150,9 +150,9 @@ class Application:
         nb_groupes = len(self.pmpg)
         nb_pts_per_group = [int(self.pts_per_group.get()) for i in range(nb_groupes)]
 
-        aiguilles_par_groupes = elodie2(self.pmpg, float(self.zoom.get()), float(self.offset_x.get()), 
+        aiguilles_par_groupes = generer_pos_aiguilles(self.pmpg, float(self.zoom.get()), float(self.offset_x.get()), 
                                         float(self.offset_y.get()), nb_pts_per_group, self.nom_projet)
-        self.load_plot(PATH_FIGURES + self.nom_projet)
+        self.load_plot(PATH_FIGURES + self.nom_projet + ".png")
         print("Points déterminés")
 
     def load_image(self):
@@ -178,7 +178,7 @@ class Application:
     
     def load_plot(self, filename):
 
-        self.new_plot = Image.open(PATH_FIGURES + filename)
+        self.new_plot = Image.open(filename)
         self.resized_plot = ImageTk.PhotoImage(self.resize_image_to_fit(self.new_plot))
 
         # Destroy previous label if it exists

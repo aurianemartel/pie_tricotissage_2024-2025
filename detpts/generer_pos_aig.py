@@ -102,7 +102,8 @@ def afficher_aiguilles(aiguilles_par_gpe, filename="figure.png"):
     plt.grid()
     plt.legend()
     plt.savefig(PATH_INTERFACE + filename)
-    plt.show()
+    # plt.show()
+    plt.close()
 
 
 def generer_pos_aiguilles(points_morceaux_par_gpe, scale_factor, offset_x, offset_y, n, filename, afficher_points_pre_scale=False, seuil=50):
