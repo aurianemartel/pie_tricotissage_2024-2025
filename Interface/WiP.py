@@ -10,9 +10,11 @@ from marq_tric import tricotissage, marquage
 
 sys.path.append('../detpts')
 from elodie1 import elodie1
+from elodie2 import elodie2
 
 PATH_YAML = "../yaml_files/"
 PATH_OUT = "../prgs_gcode/"
+PATH_FIGURES = "../figures/"
 
 MIN_ZOOM = 0
 MAX_ZOOM = 2
@@ -53,17 +55,14 @@ class Application:
         self.nom_projet_entry = tk.Entry(cell0)
         self.nom_projet_entry.pack(pady=5)
         tk.Button(cell0,text="Sélection image", command=self.load_image,**self.button_dict).pack(pady=5)
-        # tk.Button(cell0,text="Détection du tracé",**self.button_dict).pack(pady=5)
-        tk.Button(cell0,text="Détection du tracé", command=self.run_elodie1, **self.button_dict).pack(pady=5)
-        
+        tk.Button(cell0,text="Détection du tracé", command=self.run_detection_trace, **self.button_dict).pack(pady=5)
+
         self.canvas_width = 420
         self.canvas_height = 300
         self.margin = 0
 
         self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)
         self.canvas.grid(row=1, column=1, columnspan=2, **self.grid_dict)
-
-        # Édition des points
         
 
         # Génération des Gcodes
@@ -91,23 +90,26 @@ class Application:
         result = func(PATH_YAML + nom_fichier)  # Appelle la fonction en argument
         self.message.config(text=f"{result}", fg="green")
     
-    def run_elodie1(self):
-        lx, ly, longueurs, self.pmpg = elodie1(self.file_path, epsilon=0.01, 
-                                          afficher_im_init=False, 
-                                          afficher_squelette=False)
+    def run_detection_trace(self):
+        self.nom_projet = self.nom_projet_entry.get()
+        if not self.nom_projet:
+            self.Erreur_nom_projet = tk.Label(text="Veuillez entrer un nom de projet", fg="red")
+            self.Erreur_nom_projet.grid(row=2, column=0, columnspan=3)
+            return
         
-        self.show_edit_points()
-        print("Tracé detecté")
-    
-    def show_edit_points(self):
+        if hasattr(self, 'Erreur_nom_projet'):
+            self.Erreur_nom_projet.destroy()
 
         ttk.Separator(self.window,orient='horizontal').grid(row=2, column=0, columnspan=3, sticky="ew")
 
+        lx, ly, longueurs, self.pmpg = elodie1(self.file_path, epsilon=0.01, 
+                                          afficher_im_init=False, 
+                                          afficher_squelette=False)
+
         self.xy_span = self.min_max_pmpg()
         x_min, x_max, y_min, y_max = self.xy_span
-        self.text_xy = tk.Label(self.window, 
-                                  text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}", 
-                                  **self.text_dict)
+        self.text_xy = tk.Label(self.window, **self.text_dict, 
+                text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
         self.text_xy.grid(row=3, column=0, columnspan=3)
 
         tk.Label(self.window, text="Zoom :", **self.text_dict).grid(row=4, column=0)
@@ -118,13 +120,15 @@ class Application:
         self.zoom.grid(row=4, column=1, columnspan=2)
 
         tk.Label(self.window, text="Offset en x :", **self.text_dict).grid(row=5, column=0)
-        self.offset_x = tk.Scale(self.window, from_=-1*x_min, to=MAX_OFFSETX_RATE*x_max, tickinterval=(x_max-x_min)//5, 
-                                 command=self.set_x_offset, length=self.canvas_width, orient="horizontal")
+        self.offset_x = tk.Scale(self.window, from_=-1*x_min, to=MAX_OFFSETX_RATE*x_max, 
+                                 tickinterval=(x_max-x_min)//5, command=self.set_x_offset, 
+                                 length=self.canvas_width, orient="horizontal")
         self.offset_x.grid(row=5, column=1, columnspan=2)
 
         tk.Label(self.window, text="Offset en y :", **self.text_dict).grid(row=6, column=0)        
-        self.offset_y = tk.Scale(self.window, from_=-1*y_min, to=MAX_OFFSETY_RATE*y_max, tickinterval=(y_max-y_min)//5, 
-                                 command=self.set_y_offset, length=self.canvas_width, orient="horizontal")
+        self.offset_y = tk.Scale(self.window, from_=-1*y_min, to=MAX_OFFSETY_RATE*y_max, 
+                                 tickinterval=(y_max-y_min)//5, command=self.set_y_offset, 
+                                 length=self.canvas_width, orient="horizontal")
         self.offset_y.grid(row=6, column=1, columnspan=2)
 
         ttk.Separator(self.window,orient='horizontal').grid(row=7, column=0, columnspan=3, sticky="ew")
@@ -132,11 +136,23 @@ class Application:
         self.pts_per_group = tk.Entry(self.window)
         self.pts_per_group.grid(row=8, column=1)
         tk.Button(self.window,text="Valider", 
-                   command=self.run_elodie2, **self.button_dict).grid(row=8, column=2)
+                   command=self.run_generer_pose_aiguilles, **self.button_dict).grid(row=8, column=2)
 
     
-    def run_elodie2(self):
-        # self.cell5.grid(column=0, row=4, columnspan=3)
+    def run_generer_pose_aiguilles(self):
+        self.window.grid_columnconfigure(3, weight=1)
+        self.window.grid_columnconfigure(4, weight=1)
+        self.window.grid_columnconfigure(5, weight=1)
+
+        self.canvas_plot = tk.Canvas(self.window, width=self.canvas_width, height=self.canvas_height)
+        self.canvas_plot.grid(row=1, column=3, columnspan=2, **self.grid_dict)
+
+        nb_groupes = len(self.pmpg)
+        nb_pts_per_group = [int(self.pts_per_group.get()) for i in range(nb_groupes)]
+
+        aiguilles_par_groupes = elodie2(self.pmpg, float(self.zoom.get()), float(self.offset_x.get()), 
+                                        float(self.offset_y.get()), nb_pts_per_group, self.nom_projet)
+        self.load_plot(PATH_FIGURES + self.nom_projet)
         print("Points déterminés")
 
     def load_image(self):
@@ -149,16 +165,33 @@ class Application:
         self.pic = ImageTk.PhotoImage(self.resized_img)
 
         # Destroy previous label if it exists
-        if hasattr(self, 'down_window_label'):
-            self.down_window_label.destroy()
+        if hasattr(self, 'image_label'):
+            self.image_label.destroy()
 
-        self.down_window_label = tk.Label(image=self.pic)
-        self.down_window_label.image = self.pic  # keep reference
+        self.image_label = tk.Label(image=self.pic)
+        self.image_label.image = self.pic  # keep reference
 
         # Replace the old image window with a new centered one
         center_x = self.canvas_width // 2
         center_y = self.canvas_height // 2
-        self.canvas.create_window(center_x, center_y, window=self.down_window_label)
+        self.canvas.create_window(center_x, center_y, window=self.image_label)
+    
+    def load_plot(self, filename):
+
+        self.new_plot = Image.open(PATH_FIGURES + filename)
+        self.resized_plot = ImageTk.PhotoImage(self.resize_image_to_fit(self.new_plot))
+
+        # Destroy previous label if it exists
+        if hasattr(self, 'plot_label'):
+            self.plot_label.destroy()
+
+        self.plot_label = tk.Label(image=self.resized_plot)
+        self.plot_label.image = self.resized_plot  # keep reference
+
+        # Replace the old image window with a new centered one
+        center_x = self.canvas_width // 2
+        center_y = self.canvas_height // 2
+        self.canvas_plot.create_window(center_x, center_y, window=self.plot_label)
 
 
     def resize_image_to_fit(self, image):
@@ -196,7 +229,8 @@ class Application:
         x_max = int(zoom_val*x_max) + offset_x_val
         y_min = int(zoom_val*y_min) + offset_y_val
         y_max = int(zoom_val*y_max) + offset_y_val
-        self.text_xy.configure(text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
+        self.text_xy.configure(
+            text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
         self.offset_x.configure(from_=-1*x_min, to=MAX_OFFSETX_RATE*x_max, tickinterval=(x_max-x_min)//5)
         self.offset_y.configure(from_=-1*y_min, to=MAX_OFFSETY_RATE*y_max, tickinterval=(y_max-y_min)//5)
     
@@ -210,7 +244,8 @@ class Application:
         y_min = int(zoom_val*y_min) + offset_y_val
         y_max = int(zoom_val*y_max) + offset_y_val
         # self.xy_span = x_min, x_max, y_min, y_max
-        self.text_xy.configure(text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
+        self.text_xy.configure(
+            text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
 
     def set_y_offset(self, val):
         x_min, x_max, y_min, y_max = self.xy_span
@@ -222,7 +257,8 @@ class Application:
         y_min = int(zoom_val*y_min) + offset_y_val
         y_max = int(zoom_val*y_max) + offset_y_val
         # self.xy_span = x_min, x_max, y_min, y_max
-        self.text_xy.configure(text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
+        self.text_xy.configure(
+            text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
 
 
 # Launch the app
