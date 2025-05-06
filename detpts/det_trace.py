@@ -1,8 +1,3 @@
-# This is a sample Python script.
-
-# Press Maj+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
 import cv2
 import numpy as np
 import scipy.ndimage as ndi     #convolution : permet de déterminer les extrémités du squelette
@@ -17,7 +12,6 @@ def approx_morceaux(points, epsilon):
         """ points désigne la liste des points d'un contour (de la forme [x,y])
         renvoie une nouvelle liste de points qui sont les extrémités des segments de l'apporximation par morceaux"""
         start, end = np.array(points[0]), np.array(points[-1])
-        #print("Start, end", start, end)
         line_vec = end - start
         line_len = np.linalg.norm(line_vec)
         line_unitvec = line_vec / line_len if line_len != 0 else line_vec
@@ -41,7 +35,6 @@ def trouve_starts(skeleton):
 
     neighbors = ndi.convolve(skeleton.astype(int), structure, mode='constant', cval=0) - 10
     endpoints = np.argwhere((skeleton == 1) & (neighbors == 1))  # 1 voisin = extrémité
-    #intersections = np.argwhere((skeleton == 1) & (neighbors >= 3))  # 3+ voisins = intersection
 
     starts = set(map(tuple, endpoints))
     return list(starts)
@@ -98,12 +91,12 @@ def dimension(points_morceaux_par_gpe):
 
 
 
-def elodie1(image_init, epsilon = 0.1, afficher_squelette = False, afficher_contours = False, afficher_im_init = False,
+def detection_trace(image_init, epsilon = 0.1, afficher_squelette = False, afficher_contours = False, afficher_im_init = False,
             afficher_splines = False):
     """
         Entrée:
         -image_init : chemin d'accès à l'image
-        -epsilon : tolérance dans approx_morceaux; eps grand = caccul rapide mais découpe moins précise
+        -epsilon : tolérance dans approx_morceaux; eps grand = calcul rapide mais découpe moins précise
         Renvoie :
         -l'écart maximal en x
         -l'écart maximal en y
@@ -147,8 +140,6 @@ def elodie1(image_init, epsilon = 0.1, afficher_squelette = False, afficher_cont
         points_morceaux_par_gpe[i] = approx_morceaux(contour, epsilon)
         longueurs.append(longueur_approx_morceaux((points_morceaux_par_gpe[i])))
     lx, ly = dimension(points_morceaux_par_gpe)
-    #print("lx, ly, longueurs, pmpg : ", lx, ly, longueurs, points_morceaux_par_gpe)
     return lx, ly, longueurs, points_morceaux_par_gpe
 
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
