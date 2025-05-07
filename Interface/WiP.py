@@ -97,6 +97,8 @@ class Application:
             self.Erreur_nom_projet.grid(row=2, column=0, columnspan=3)
             return
         
+        # TODO : vérification qu'une image a été choisie
+        
         if hasattr(self, 'Erreur_nom_projet'): # Teste si c'est affighé
             self.Erreur_nom_projet.destroy()
 
@@ -224,6 +226,7 @@ class Application:
         self.message.config(text=f"{result}", fg="green")
         if VERBOSE:
             print(result)
+        # TODO : effacer message si une autre fonction est déclenchée
 
 
     def load_image(self):
