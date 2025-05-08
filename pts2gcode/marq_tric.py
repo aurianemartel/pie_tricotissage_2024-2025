@@ -45,6 +45,7 @@ F{feed_rate} ; Vitesse de déplacement, max=20000
 
 
 # Les 4 lignes suivantes permettent de faire le tour de la zone accessible
+# À ajouter à l'en-tête ci-dessus si l'on veut vérifier la calibration du plateau lors du tricotissage et du marquage
 """
 G0 Y{dim_y} Z0
 G0 Y{dim_y} Z{dim_z}
@@ -88,9 +89,6 @@ def G23(yi, zi, yf, zf, cy, cz, sens):
 
 
 ## Marquage
-
-# TODO : prendre en compte le décalage entre le crayon et la buse de tricotissage
-
 
 def marquage(yamlFile, offset_y=None, offset_z=None):
     """

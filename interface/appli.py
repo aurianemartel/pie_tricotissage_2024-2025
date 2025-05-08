@@ -5,7 +5,7 @@ from PIL import Image, ImageTk
 
 import sys
 
-sys.path.append('../src')
+sys.path.append('../pts2gcode')
 from marq_tric import tricotissage, marquage
 from to_yaml import create_yaml_file
 
