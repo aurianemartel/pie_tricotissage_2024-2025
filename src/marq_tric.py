@@ -29,11 +29,12 @@ MAX_Z = 675
 MIN_Z = 0
 
 # Paramètres de la position du crayon par rapport à la buse de tricotissage
-OFFSET_Y = 27
-OFFSET_Z = -59
+ACTIVATE_OFFSET = True  # Désactiver pour vérfier que la buse est bien en face des points en lançant un marquage après avoir fait le marquage
+OFFSET_Y = 26
+OFFSET_Z = -56
 
 
-def enTete(dim_y, dim_z, feed_rate=1000):
+def enTete(dim_y, dim_z, feed_rate=10000):
     return f"""G21 ; Definir les unites en millimetres
 G90 ; Positionnement absolu
 G19 ; YZ plan
@@ -98,9 +99,9 @@ def marquage(yamlFile, offset_y=None, offset_z=None):
     les valeurs d'offset_x et offset_y sont les décalages entre la position de la buse et celle du crayon.
     """
     if offset_y is None:
-        offset_y = OFFSET_Y
+        offset_y = OFFSET_Y if ACTIVATE_OFFSET else 0
     if offset_z is None:
-        offset_z = OFFSET_Z
+        offset_z = OFFSET_Z if ACTIVATE_OFFSET else 0
 
     with open(yamlFile, "r") as file:
         data = yaml.safe_load(file)
@@ -126,6 +127,10 @@ def marquage(yamlFile, offset_y=None, offset_z=None):
                     marq.write("\nM0\n")
                 # Descendre et relever crayon
                 marq.write("\nM3\nG4 P0.5 \nM5\nG4 P0.5 \n\n")
+                if i == 0 and j == 0:
+                    # Pour la première aiguille, on met ensuite la buse à l'endroit du marquage pour vérifier que le marquage est au bon endroit.
+                    marq.write(G0(py, pz))
+                    marq.write("\nM0\n")
         marq.write("G0 Y50 Z100\nG0 Y50 Z0\nG0 Y0 Z0\n")
     return f"Fichier marq_{data['nom']}.gcode généré avec succès"
 
