@@ -91,6 +91,7 @@ def G23(yi, zi, yf, zf, cy, cz, sens):
 
 ## Marquage
 
+
 def marquage(yamlFile, offset_y=None, offset_z=None):
     """
     Crée le fichier gcode de marquage associé au patron décrit dans le fichier yaml en argument.
@@ -136,6 +137,76 @@ def marquage(yamlFile, offset_y=None, offset_z=None):
 # Tricotissage
 
 
+# Fonctions utilitaires pour la détection d'intersection de segments
+def orientation(p, q, r):
+    """
+    Détermine l'orientation des points ordonnés (p, q, r).
+    Retourne:
+    0 --> p, q, r sont colinéaires
+    1 --> Sens horaire
+    -1 --> Sens anti-horaire
+    """
+    # val = (qy - py) * (rz - qz) - (qz - pz) * (ry - qy)
+    # p = [py, pz], q = [qy, qz], r = [ry, rz]
+    val = (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+    if val == 0:
+        return 0  # Colinéaire
+    return 1 if val > 0 else -1  # Horaire ou Anti-horaire (dépend de l'axe Z)
+
+
+def dans_segment(p, q, r):
+    """
+    Étant donné trois points colinéaires p, q, r, la fonction vérifie si
+    le point q se trouve sur le segment 'pr'.
+    """
+    if (
+        q[0] <= max(p[0], r[0])
+        and q[0] >= min(p[0], r[0])
+        and q[1] <= max(p[1], r[1])
+        and q[1] >= min(p[1], r[1])
+    ):
+        return True
+    return False
+
+
+def segments_intersection(p1, q1, p2, q2):
+    """
+    Vérifie si le segment p1q1 intersecte le segment p2q2.
+    p1, q1: extrémités du premier segment.
+    p2, q2: extrémités du deuxième segment.
+    """
+    # Trouver les quatre orientations nécessaires pour les cas généraux et spéciaux
+    o1 = orientation(p1, q1, p2)
+    o2 = orientation(p1, q1, q2)
+    o3 = orientation(p2, q2, p1)
+    o4 = orientation(p2, q2, q1)
+
+    # Cas général
+    # Si (p1, q1, p2) et (p1, q1, q2) ont des orientations différentes ET
+    # (p2, q2, p1) et (p2, q2, q1) ont des orientations différentes.
+    if o1 != 0 and o2 != 0 and o3 != 0 and o4 != 0:
+        if o1 != o2 and o3 != o4:
+            return True
+    # Cas spéciaux (colinéarité)
+    # o1 == 0 signifie que p1, q1, p2 sont colinéaires.
+    # on_segment(p1, p2, q1) vérifie si p2 est sur le segment p1q1.
+    # Normalement on n'a pas de cas spéciaux en pratique, car si les segments sont colinéaire,
+    # le schéma n'est tout simplement pas tricotissable.
+    elif o1 == 0 and dans_segment(p1, p2, q1):
+        return True
+    # p1, q1, q2 sont colinéaires et q2 est sur le segment p1q1
+    elif o2 == 0 and dans_segment(p1, q2, q1):
+        return True
+    # p2, q2, p1 sont colinéaires et p1 est sur le segment p2q2
+    elif o3 == 0 and dans_segment(p2, p1, q2):
+        return True
+    # p2, q2, q1 sont colinéaires et q1 est sur le segment p2q2
+    elif o4 == 0 and dans_segment(p2, q1, q2):
+        return True
+
+    return False  # Ne se croisent pas
+
+
 def parcours(groupe1, groupe2):
     """
     Décrit le parcours du fil autour des aiguilles
@@ -154,6 +225,20 @@ def parcours(groupe1, groupe2):
 
     # initialisation : on se place au premier point du parcours
     prc = [groupe1[0]]
+
+    # On doit vérifieer que le tricotissage ne se "croise" pas, sinon on a des problèmes
+    # car on ne tourne pas toujouts dans le même sens lors du parcours et cela crée un schéma "bizarre"
+    # en plus de causer des problèmes lors des évitements de collisions
+
+    if segments_intersection(groupe1[0], groupe2[0], groupe1[-1], groupe2[-1]):
+        # On retourne le groupe 2
+        groupe2 = groupe2[::-1]
+        print("RETOURNEMENT DU GROUPE 2")
+        if segments_intersection(groupe1[0], groupe2[0], groupe1[-1], groupe2[-1]):
+            # Le problème n'a pas disparu, sûrement que le schéma n'est pas tricotissable
+            raise ValueError(
+                "Probleme, le schéma est inhabituel, êtes vous sur que le groupe 1 n'intersecte pas le groupe 2 ?"
+            )
 
     for i in range(l1 - 1):
         # on est déjà en groupe1[i], pas besoin d'y aller

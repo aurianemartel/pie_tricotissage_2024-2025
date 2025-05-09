@@ -28,7 +28,7 @@ DIM_MAX_Y = 350
 DIM_MAX_Z = 600
 
 DEFAULT_PROJECT_NAME = "Test"
-EPSILON_MAX = 20
+EPSILON_MAX = 40
 
 VERBOSE = True  # Affichages terminal de commande
 
@@ -174,7 +174,7 @@ class Application:
         apg_array, lg_min = generer_pos_aiguilles(pmpg_bis, float(self.zoom.get()), float(self.offset_x.get()), 
                                         float(self.offset_y.get()), nb_pts_per_group, self.nom_projet)
         self.apg = [[[point.tolist()[1], point.tolist()[0]] for point in row] for row in apg_array]    
-        self.epsilon = min(EPSILON_MAX, lg_min/2)
+        # self.epsilon = min(EPSILON_MAX, lg_min/2) # Finalement, on prend le epslion généré par create_yaml_file
         self.load_plot(PATH_FIGURES + self.nom_projet + ".png")
         if VERBOSE:
             print(f"Points déterminés, apg : {self.apg}")
@@ -202,8 +202,7 @@ class Application:
         self.yaml_filename = PATH_YAML + self.nom_projet + ".yaml"
 
         # TODO : récupérer epsilon lors de la génération des positions d'aiguilles ?
-        create_yaml_file(self.nom_projet, DIM_MAX_Y, DIM_MAX_Z, link_data, group_data, 
-                         self.yaml_filename, self.epsilon)
+        create_yaml_file(self.nom_projet, DIM_MAX_Y, DIM_MAX_Z, link_data, group_data, self.yaml_filename)
         if VERBOSE:
             print(f"Fichier YAML généré : {self.yaml_filename}")
 
