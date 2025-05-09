@@ -1,0 +1,54 @@
+@startuml "Architecture fonctionnelle"
+
+title "Architecture Fonctionnelle"
+
+package "Du dessin au points" as ddap {
+    component "Etape 1" as e1
+    component "Etape 2" as e2
+}
+
+file Yaml
+file Dessin 
+Dessin -right-> e1
+e1 -> e2
+e2 -right-> Yaml
+ddap -[hidden]> Yaml
+
+
+package "Des points au tracé" as dpat {
+    component "Marquage"
+    component "Tracé"
+    "Marquage" -[#white]-> "Tracé"
+}
+
+ddap -[hidden]> dpat
+
+Actor Utilisateur
+
+rectangle "Interface utilisateur" as ui {
+    component  "dummy1" #white
+    rectangle dummy2 #white
+    rectangle dummy3 #white
+    rectangle dummy4 #white
+    dummy1 -[hidden]> dummy2
+    dummy2 -[hidden]> dummy3
+    dummy3 -[hidden]> dummy4
+}
+
+hide dummy1
+
+
+Utilisateur --> ui
+
+ui -[hidden]-> ddap
+
+Yaml -right-> Marquage 
+file "gcode de marquage"
+Marquage -> "gcode de marquage"
+
+Yaml -> "Tracé"
+file "gcode de tracé"
+"Tracé" -> "gcode de tracé"
+
+
+@enduml
