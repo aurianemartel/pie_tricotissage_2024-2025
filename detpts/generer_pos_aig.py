@@ -51,8 +51,9 @@ def raffiner_approx_affine(points, n, enlever_extreme = False):
 
 
 def pos_aiguilles(points_morceaux_par_gpe, n, seuil):
-    """Renvoie la position des aiguilles avec n points par groupe (n tableau, peu différer pour chaque groupe)
-    sous la forme d'un tableau tab tel que tab[i] """
+    """Renvoie la position des aiguilles avec n points par groupe (n est un tableau, peut différer pour chaque groupe)
+    sous la forme d'un tableau tab tel que tab[i] est une liste de tableau numpy où chaque tab[i][j] est un tableau de
+    taille 2 qui contient la coordonnée x et la coordonnée y de l'aiguille en question"""
     aiguilles_par_gpe = []
     longueur_min = 1000
     for i, points in enumerate(points_morceaux_par_gpe):
@@ -71,18 +72,24 @@ def pos_aiguilles(points_morceaux_par_gpe, n, seuil):
 
 def rescale(points_morceaux_par_gpe, scale_factor, offset_x, offset_y):
     """Destructif, points_morceaux_par_gpe est modifié"""
-    for points in points_morceaux_par_gpe:
-        for point in points:
-            point[0] = scale_factor * (point[0] + offset_x)
-            point[1] = scale_factor * (point[1] + offset_y)
+    res = [[] for _ in range(points_morceaux_par_gpe)]
+    for i, points in enumerate(points_morceaux_par_gpe):
+        for j in range(len(points)):
+            point_0 = scale_factor * (points[j][0] + offset_x)
+            point_1 = scale_factor * (points[j][1] + offset_y)
+            res[i].append(np.array[point_0, point_1])
+    return res
 
 def rescale_aiguilles(aiguilles, scale_factor, offset_x, offset_y):
+    res = [[] for _ in range(len(aiguilles))]
     for i in range(len(aiguilles)):
         #On parcourt les différents groupes
         for j in range(len(aiguilles[i])):
-            #On parcourt les position des aiguilles d'un même groupe
-            aiguilles[i][j][0] = scale_factor * (aiguilles[i][j][0] + offset_x)
-            aiguilles[i][j][1] = scale_factor * (aiguilles[i][j][1] + offset_y)
+            #On parcourt les positions des aiguilles d'un même groupe
+            aiguilles_0 = scale_factor * (aiguilles[i][j][0] + offset_x)
+            aiguilles_1 = scale_factor * (aiguilles[i][j][1] + offset_y)
+            res[i].append(np.array([aiguilles_0, aiguilles_1]))
+    return res
 
 
 def afficher_aiguilles(aiguilles_par_gpe, filename="figure.png"):
@@ -121,7 +128,7 @@ def generer_pos_aiguilles(points_morceaux_par_gpe, scale_factor, offset_x, offse
     if afficher_points_pre_scale:
         afficher_points(points_morceaux_par_gpe)
     aiguilles_par_gpe, longueur_min = pos_aiguilles(points_morceaux_par_gpe, n, seuil)
-    rescale_aiguilles(aiguilles_par_gpe, scale_factor, offset_x, offset_y)
+    aiguilles_post_scale = rescale_aiguilles(aiguilles_par_gpe, scale_factor, offset_x, offset_y)
     longueur_min *= scale_factor
-    afficher_aiguilles(aiguilles_par_gpe, filename)
-    return aiguilles_par_gpe, longueur_min
+    afficher_aiguilles(aiguilles_post_scale, filename)
+    return aiguilles_post_scale, longueur_min
