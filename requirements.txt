@@ -1,12 +1,12 @@
 
-- matplotlib>=3.10.1
-- opencv-python>=4.11.0.86
-- pyyaml>=6.0.2
-- scikit-image>=0.25.2
-- scipy>=1.15.2
+matplotlib>=3.10.1
+opencv-python>=4.11.0.86
+pyyaml>=6.0.2
+scikit-image>=0.25.2
+scipy>=1.15.2
 
 
-Tkinter:
-pour linux : sudo apt install python3-tk
-pour mac : brew install python-tk
-pour windows : inclut par défaut dans l'installation python
+# Tkinter:
+# pour linux : sudo apt install python3-tk
+# pour mac : brew install python-tk
+# pour windows : inclut par défaut dans l'installation python
