@@ -27,8 +27,8 @@ MAX_OFFSETY_RATE = 1
 DIM_MAX_Y = 350
 DIM_MAX_Z = 600
 
-EPSILON_DEFAULT = 8
 DEFAULT_PROJECT_NAME = "Test"
+EPSILON_MAX = 20
 
 VERBOSE = True  # Affichages terminal de commande
 
@@ -148,6 +148,7 @@ class Application:
 
     
     def run_generer_pose_aiguilles(self):
+        # TODO : ajouter séparation entre partie droite et gauche de l'app
         # TODO : vérifier validité des valeurs min et max pour x et y
         # On vérifie qu'il y a un nombre de points par groupe fixé
         pts_per_group = self.pts_per_group_entry.get()
@@ -173,6 +174,7 @@ class Application:
         apg_array, lg_min = generer_pos_aiguilles(pmpg_bis, float(self.zoom.get()), float(self.offset_x.get()), 
                                         float(self.offset_y.get()), nb_pts_per_group, self.nom_projet)
         self.apg = [[[point.tolist()[1], point.tolist()[0]] for point in row] for row in apg_array]    
+        self.epsilon = min(EPSILON_MAX, lg_min/2)
         self.load_plot(PATH_FIGURES + self.nom_projet + ".png")
         if VERBOSE:
             print(f"Points déterminés, apg : {self.apg}")
@@ -199,7 +201,9 @@ class Application:
         # TODO : plus de deux groupes : selection de liens
         self.yaml_filename = PATH_YAML + self.nom_projet + ".yaml"
 
-        create_yaml_file(self.nom_projet, DIM_MAX_Y, DIM_MAX_Z, link_data, group_data, self.yaml_filename, EPSILON_DEFAULT)
+        # TODO : récupérer epsilon lors de la génération des positions d'aiguilles ?
+        create_yaml_file(self.nom_projet, DIM_MAX_Y, DIM_MAX_Z, link_data, group_data, 
+                         self.yaml_filename, self.epsilon)
         if VERBOSE:
             print(f"Fichier YAML généré : {self.yaml_filename}")
 
@@ -313,7 +317,6 @@ class Application:
         x_max = int(zoom_val*x_max) + offset_x_val
         y_min = int(zoom_val*y_min) + offset_y_val
         y_max = int(zoom_val*y_max) + offset_y_val
-        # self.xy_span = x_min, x_max, y_min, y_max
         self.text_xy.configure(
             text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
 
@@ -326,7 +329,6 @@ class Application:
         x_max = int(zoom_val*x_max) + offset_x_val
         y_min = int(zoom_val*y_min) + offset_y_val
         y_max = int(zoom_val*y_max) + offset_y_val
-        # self.xy_span = x_min, x_max, y_min, y_max
         self.text_xy.configure(
             text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
 

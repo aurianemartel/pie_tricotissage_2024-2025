@@ -36,6 +36,7 @@ On installe les dépendances python avec, depuis la racine du repository :
 ```
 $pip install -r requirements.txt
 ```
+*Normalement, tkinter est installé par défaut sur la plupart des ordinateurs ayant python. S'il n'est pas installé, les consignes d'installation pour mac et linux sont présentes dans requirements.txt.*
 
 On lance l'interface utilisateur : 
 ```
