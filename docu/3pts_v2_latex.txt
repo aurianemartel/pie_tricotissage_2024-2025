@@ -1,0 +1,60 @@
+\documentclass[10pt]{article}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.15}
+\usepackage{mathrsfs}
+\usetikzlibrary{arrows}
+\pagestyle{empty}
+\begin{document}
+\definecolor{yqyqyq}{rgb}{0.5019607843137255,0.5019607843137255,0.5019607843137255}
+\definecolor{wewdxt}{rgb}{0.43137254901960786,0.42745098039215684,0.45098039215686275}
+\definecolor{rvwvcq}{rgb}{0.08235294117647059,0.396078431372549,0.7529411764705882}
+\begin{tikzpicture}[line cap=round,line join=round,>=triangle 45,x=1cm,y=1cm]
+\clip(-8.275365465981473,-3.4102533055392255) rectangle (7.804582827156624,9.085440778901104);
+\draw [line width=2pt,dash pattern=on 1pt off 1pt,color=wewdxt] (-6.311323447870905,-0.6270793077415343)-- (-5.0469537931612996,4.77339075863226);
+\draw [line width=2pt,dash pattern=on 1pt off 1pt,color=wewdxt] (-5.0469537931612996,4.77339075863226)-- (-1.266953793161299,5.97339075863226);
+\draw [shift={(-5.0469537931612996,4.77339075863226)},line width=2pt]  (0,0) --  plot[domain=1.3408164382021586:3.448990126712615,variable=\t]({1*0.9564940093547346*cos(\t r)+0*0.9564940093547346*sin(\t r)},{0*0.9564940093547346*cos(\t r)+1*0.9564940093547346*sin(\t r)}) -- cycle ;
+\draw [line width=2pt] (-7.251323447870904,-0.5270793077415342)-- (-5.928680990885913,4.493477362529208);
+\draw [line width=2pt,dash pattern=on 1pt off 1pt,color=yqyqyq] (-5.928680990885913,4.493477362529208)-- (-5.0469537931612996,4.77339075863226);
+\draw [line width=2pt,dash pattern=on 1pt off 1pt,color=yqyqyq] (-4.8289133875522,5.704701217852661)-- (-5.0469537931612996,4.77339075863226);
+\draw [line width=2pt,dash pattern=on 1pt off 1pt,color=wewdxt] (0.6744582843752756,-0.7957500940331924)-- (1.9388279390848846,4.604719972340602);
+\draw [line width=2pt,dash pattern=on 1pt off 1pt,color=wewdxt] (1.9388279390848846,4.604719972340602)-- (5.718827939084877,5.804719972340602);
+\draw [shift={(1.9388279390848846,4.604719972340602)},line width=2pt]  (0,0) --  plot[domain=1.8781937999177187:2.911612764997055,variable=\t]({1*0.8757464258224134*cos(\t r)+0*0.8757464258224134*sin(\t r)},{0*0.8757464258224134*cos(\t r)+1*0.8757464258224134*sin(\t r)}) -- cycle ;
+\draw [line width=2pt] (-0.2845869654141582,-0.7888281685897076)-- (1.0954233833596934,4.802179658959845);
+\draw [line width=2pt,dash pattern=on 1pt off 1pt,color=yqyqyq] (1.0954233833596934,4.802179658959845)-- (1.9388279390848846,4.604719972340602);
+\draw [line width=2pt,dash pattern=on 1pt off 1pt,color=yqyqyq] (1.6738453453336333,5.439415142657042)-- (1.9388279390848846,4.604719972340602);
+\begin{scriptsize}
+\draw [fill=rvwvcq] (-6.311323447870905,-0.6270793077415343) circle (2.5pt);
+\draw[color=rvwvcq] (-6.19509243505102,-0.3249835062876481) node {$A$};
+\draw [fill=rvwvcq] (-5.0469537931612996,4.77339075863226) circle (2.5pt);
+\draw[color=rvwvcq] (-4.930061537863582,5.072481655045408) node {$B$};
+\draw [fill=rvwvcq] (-1.266953793161299,5.97339075863226) circle (2.5pt);
+\draw[color=rvwvcq] (-1.1490247451589086,6.28128895680229) node {$C$};
+\draw[color=wewdxt] (-5.4079620990232815,2.191022389229584) node {$u$};
+\draw[color=wewdxt] (-3.0465710909400645,5.325487834482895) node {$v$};
+\draw [fill=rvwvcq] (-7.251323447870904,-0.5270793077415342) circle (2.5pt);
+\draw[color=rvwvcq] (-7.080614063082226,-0.22659221428418097) node {$A'$};
+\draw [fill=rvwvcq] (-4.8289133875522,5.704701217852661) circle (2.5pt);
+\draw[color=rvwvcq] (-4.986285133294135,6.042338676222442) node {$PP2$};
+\draw [fill=rvwvcq] (-5.928680990885913,4.493477362529208) circle (2.5pt);
+\draw[color=rvwvcq] (-6.335651423627402,4.5102457007398815) node {$PP1$};
+\draw[color=yqyqyq] (-4.550552268707351,4.5102457007398815) node {$\epsilon$*(-1)*v/||v||};
+\draw[color=yqyqyq] (-3.875869123540718,5.522270418489829) node {$\epsilon$*u/||u||};
+\draw [fill=rvwvcq] (0.6744582843752756,-0.7957500940331924) circle (2.5pt);
+\draw[color=rvwvcq] (0.8328569937680768,-0.4514865960063916) node {$A_{1}$};
+\draw [fill=rvwvcq] (1.9388279390848846,4.604719972340602) circle (2.5pt);
+\draw[color=rvwvcq] (2.0978878909555143,4.945978565326664) node {$B_{1}$};
+\draw [fill=rvwvcq] (5.718827939084877,5.804719972340602) circle (2.5pt);
+\draw[color=rvwvcq] (5.878924683660188,6.154785867083546) node {$C_{1}$};
+\draw[color=wewdxt] (1.6199873297958154,2.06451929951084) node {$u_{1}$};
+\draw[color=wewdxt] (3.981378337879032,5.198984744764151) node {$v_{1}$};
+\draw [fill=rvwvcq] (-0.2845869654141582,-0.7888281685897076) circle (2.5pt);
+\draw[color=rvwvcq] (-0.0667205331207677,-0.4514865960063916) node {$A'_{1}$};
+\draw [fill=rvwvcq] (1.6738453453336333,5.439415142657042) circle (2.5pt);
+\draw[color=rvwvcq] (1.6480991275110919,6.000170979649527) node {$PP2_{1}$};
+\draw [fill=rvwvcq] (1.0954233833596934,4.802179658959845) circle (2.5pt);
+\draw[color=rvwvcq] (0.6641862074764184,5.28332013790998) node {$PP1_{1}$};
+\draw[color=yqyqyq] (2.238446879531896,4.482133903024605) node {$$\epsilon$*u_{$\perp$}/||u_{$\perp$}||$};
+\draw[color=yqyqyq] (2.885018226983253,5.409823227628723) node {$$\epsilon$*v_{$\perp$}/||v_{$\perp$}||$};
+\end{scriptsize}
+\end{tikzpicture}
+\end{document}

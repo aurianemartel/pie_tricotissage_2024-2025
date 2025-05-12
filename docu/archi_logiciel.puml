@@ -2,53 +2,66 @@
 
 title "Architecture Fonctionnelle"
 
+' <style>
+'     element {
+'         FontSize: 24;
+'     }
+' </style>
+
 package "Du dessin au points" as ddap {
-    component "Etape 1" as e1
-    component "Etape 2" as e2
+    rectangle "Détection \ntracé" as e1
+    rectangle "Position \naiguilles" as e2
+}
+
+
+package "Des points au tracé" as dpat {
+    rectangle "Marquage"
+    rectangle "Tricotissage"
+    "Marquage" -[hidden]-> "Tricotissage"
+}
+
+
+Actor Utilisateur
+file Dessin 
+
+
+rectangle "Interface utilisateur" as ui {
+    rectangle  "Choix image" as ui1
+    rectangle "Choix offset, zoom,\nnombre points/groupe" as ui2
+    rectangle "Choix liens (entre quels\ngroupes tricotisser)" as ui3
+    rectangle "Validation" as ui4
+    ui1 -> ui2
+    ui2 -> ui3
+    ui3 -> ui4
 }
 
 file Yaml
-file Dessin 
-Dessin -right-> e1
+
+Dessin --> ui1
 e1 -> e2
 e2 -right-> Yaml
 ddap -[hidden]> Yaml
 
 
-package "Des points au tracé" as dpat {
-    component "Marquage"
-    component "Tracé"
-    "Marquage" -[#white]-> "Tracé"
-}
-
 ddap -[hidden]> dpat
-
-Actor Utilisateur
-
-rectangle "Interface utilisateur" as ui {
-    component  "dummy1" #white
-    rectangle dummy2 #white
-    rectangle dummy3 #white
-    rectangle dummy4 #white
-    dummy1 -[hidden]> dummy2
-    dummy2 -[hidden]> dummy3
-    dummy3 -[hidden]> dummy4
-}
 
 hide dummy1
 
 
 Utilisateur --> ui
 
-ui -[hidden]-> ddap
+ui1 ..> e1
+ui2 ..> e2
+ui3 ..> Yaml
+ui4 ..> "Marquage"
+ui4 .right.> "Tricotissage"
 
-Yaml -right-> Marquage 
+Yaml -right-> dpat 
 file "gcode de marquage"
 Marquage -> "gcode de marquage"
 
-Yaml -> "Tracé"
-file "gcode de tracé"
-"Tracé" -> "gcode de tracé"
+file "gcode de tricotissage"
+"Tricotissage" -> "gcode de tricotissage"
 
 
 @enduml

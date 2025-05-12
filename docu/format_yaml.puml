@@ -1,0 +1,25 @@
+@startyaml "format_yaml"
+
+title "Format fichier .yaml"
+
+nom: fichier
+dimensions:
+  - dim_y
+  - dim_z
+liens:
+  - ["groupe1","groupe2"]
+  - ["groupe2","groupe3"]
+groupes:
+  groupe1:
+    - [y1,z1]
+    - [y2,z2]
+    - [y3,z3]
+    - [y4,z4]
+  groupe2:
+    - [y5,z5]
+    - [y6,z6]
+  groupe3:
+    - [y7,z7]
+    - [y8,z8]
+
+@endyaml
