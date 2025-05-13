@@ -23,6 +23,7 @@ MAX_ZOOM = 2
 ZOOM_INTERVAL = 0.5
 MAX_OFFSETX_RATE = 1
 MAX_OFFSETY_RATE = 1
+MAX_PTS_PER_GROUP = 100
 
 DIM_MAX_Y = 350
 DIM_MAX_Z = 600
@@ -38,6 +39,7 @@ class Application:
         self.window.title(window_title)
 
         # Configuration de l'affichage
+        # TODO : boucles for
         window.grid_rowconfigure(0, weight=1)
         window.grid_rowconfigure(1, weight=1)
         window.grid_rowconfigure(2, weight=1)
@@ -48,6 +50,8 @@ class Application:
         window.grid_rowconfigure(7, weight=1)
         window.grid_rowconfigure(8, weight=1)
         window.grid_rowconfigure(9, weight=1)
+        window.grid_rowconfigure(10, weight=1)
+        window.grid_rowconfigure(11, weight=1)
         window.grid_columnconfigure(0, weight=1)
         window.grid_columnconfigure(1, weight=1)
         window.grid_columnconfigure(2, weight=1)
@@ -74,8 +78,8 @@ class Application:
         # Il faut lancer la détection du tracé pour afficher la suite
         tk.Button(cell0,text="Détection du tracé", command=self.run_detection_trace, **self.button_dict).pack(pady=5)
 
-        self.canvas_width = 420
-        self.canvas_height = 300
+        self.canvas_width = 400
+        self.canvas_height = 250
         self.margin = 0
 
         self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)
@@ -105,7 +109,7 @@ class Application:
         ttk.Separator(self.window,orient='horizontal').grid(row=2, column=0, columnspan=3, sticky="ew")
 
         # Détection du tracé
-        lx, ly, longueurs, self.pmpg = detection_trace(self.file_path, epsilon=0.01, 
+        lx, ly, self.lgs_groups, self.pmpg = detection_trace(self.file_path, epsilon=0.01, 
                                           afficher_im_init=False, 
                                           afficher_squelette=False)
         if VERBOSE:
@@ -138,41 +142,61 @@ class Application:
                                  length=self.canvas_width, orient="horizontal")
         self.offset_y.grid(row=6, column=1, columnspan=2)
 
-        # Choix du nombre de point par groupe (global) et validation
         ttk.Separator(self.window,orient='horizontal').grid(row=7, column=0, columnspan=3, sticky="ew")
-        tk.Label(self.window, text="Points par groupe", **self.text_dict).grid(row=8, column=0, pady=5)
-        self.pts_per_group_entry = tk.Entry(self.window)
-        self.pts_per_group_entry.grid(row=8, column=1)
-        tk.Button(self.window,text="Positions aiguilles", command=self.run_generer_pose_aiguilles, 
-                  **self.button_dict).grid(row=8, column=2)
+
+        # Choix du nombre de point par groupe et validation
+        self.nb_groupes = len(self.pmpg)
+        self.nb_pts_per_group = [-1] * self.nb_groupes
+
+        tk.Label(self.window, text="Nombre d'aiguilles par groupe", **self.text_dict).grid(row=8, column=0, pady=5)
+        # self.pts_per_group_entry = tk.Entry(self.window)
+        # self.pts_per_group_entry.grid(row=8, column=1)
+        
+        tk.Label(self.window, text="Groupe : ", **self.text_dict, justify='right').grid(row=8, column=1, pady=5)
+        ids_groupes = list(range(self.nb_groupes)) + ["Tous"]
+        self.cb_choix_groupe = ttk.Combobox(self.window, values=ids_groupes)
+        self.cb_choix_groupe.grid(row=8, column=2, pady=5)
+
+        tk.Label(self.window, text="Nombre d'aiguilles : ", **self.text_dict).grid(row=9, column=0, pady=5)
+        pts_per_group_scale = tk.Scale(self.window, from_=0, to=MAX_PTS_PER_GROUP, tickinterval=MAX_PTS_PER_GROUP//5,
+                                       command=self.set_nb_pts_group, length=self.canvas_width, orient="horizontal")
+        pts_per_group_scale.grid(row=9, column=1, columnspan=2)
+
+        tk.Label(self.window, text="Dist. entre les aiguilles : ", **self.text_dict).grid(row=10, column=0, pady=5)
+        self.print_nb_pts_per_group = tk.Label(self.window, text="", **self.text_dict)
+        self.print_nb_pts_per_group.grid(row=10, column=1, pady=5)
+
+        tk.Button(self.window,text="Déterminer positions", command=self.run_generer_pose_aiguilles, 
+                  **self.button_dict).grid(row=10, column=2)
 
     
     def run_generer_pose_aiguilles(self):
         # TODO : ajouter séparation entre partie droite et gauche de l'app
         # TODO : vérifier validité des valeurs min et max pour x et y
+        # TODO : vérifier que tous les groupes ont un nombre d'aiguilles fixé
+
         # On vérifie qu'il y a un nombre de points par groupe fixé
-        pts_per_group = self.pts_per_group_entry.get()
-        if not pts_per_group:
-            self.Erreur_pts_per_group = tk.Label(text="Veuillez choisir un nombre de points par groupe", fg="red")
-            self.Erreur_pts_per_group.grid(row=9, column=0, columnspan=3)
-            return
+        # pts_per_group = self.pts_per_group_entry.get()
+        # if not pts_per_group:
+        #     self.Erreur_pts_per_group = tk.Label(text="Veuillez choisir un nombre de points par groupe", fg="red")
+        #     self.Erreur_pts_per_group.grid(row=9, column=0, columnspan=3)
+        #     return
         
-        if hasattr(self, 'Erreur_pts_per_group'):
-            self.Erreur_pts_per_group.destroy()
+        # if hasattr(self, 'Erreur_pts_per_group'):
+        #     self.Erreur_pts_per_group.destroy()
 
         # Mise en place du canvas pour l'affichage des points générés
         self.canvas_plot = tk.Canvas(self.window, width=self.canvas_width, height=self.canvas_height)
         self.canvas_plot.grid(row=1, column=3, columnspan=3, **self.grid_dict)
 
-        nb_groupes = len(self.pmpg)
-        nb_pts_per_group = [int(pts_per_group) for i in range(nb_groupes)]
+        # nb_pts_per_group = [int(pts_per_group) for i in range(self.nb_groupes)]
 
         # Génération des points où seront les aiguilles         (apg = aiguilles_par_groupe)
         # TODO : generer_pos_aiguilles fait de l'effet de bord sur son premier argument, à corriger 
         # (il faut faire la copie dans la fonction et ne pas avoir à la faire en dehors)
         pmpg_bis = self.pmpg.copy()
         apg_array, lg_min = generer_pos_aiguilles(pmpg_bis, float(self.zoom.get()), float(self.offset_x.get()), 
-                                        float(self.offset_y.get()), nb_pts_per_group, self.nom_projet)
+                                        float(self.offset_y.get()), self.nb_pts_per_group, self.nom_projet)
         self.apg = [[[point.tolist()[1], point.tolist()[0]] for point in row] for row in apg_array]    
         # self.epsilon = min(EPSILON_MAX, lg_min/2) # Finalement, on prend le epslion généré par create_yaml_file
         self.load_plot(PATH_FIGURES + self.nom_projet + ".png")
@@ -214,12 +238,12 @@ class Application:
         # Génération des Gcodes
         tk.Button(self.window, text="Générer Gcode marquage", 
                   command=lambda: self.create_file(marquage), 
-                  **self.button_dict).grid(row=8,column=4,pady=5)
+                  **self.button_dict).grid(row=10,column=4,pady=5)
         tk.Button(self.window, text="Générer Gcode tricotissage", 
                   command=lambda: self.create_file(tricotissage), 
-                  **self.button_dict).grid(row=8,column=5,pady=5)
+                  **self.button_dict).grid(row=10,column=5,pady=5)
         self.message = tk.Label(self.window, text="", fg="green")
-        self.message.grid(row=9,column=3,columnspan=3,pady=5)
+        self.message.grid(row=11,column=3,columnspan=3,pady=5)
 
 
     # Fonctions auxiliaires
@@ -331,6 +355,28 @@ class Application:
         self.text_xy.configure(
             text=f"x_min = {x_min}    x_max = {x_max}    y_min = {y_min}    y_max = {y_max}")
 
+    def set_nb_pts_group(self, val):
+        '''
+        Cette méthode permet de sélectionner le nombre d'aiguilles d'un groupe, ou de tous, via un slider. 
+        Elle affiche aussi la distance entre les aiguilles (minimale si pour tous les groupes)'''
+
+        num_groupe = self.cb_choix_groupe.get()
+        nb_pts = int(val)
+        if num_groupe == "Tous":
+            for i in range(self.nb_groupes):
+                self.nb_pts_per_group[i] = nb_pts
+            self.print_nb_pts_per_group.configure(text=f"{ round( float(self.lgs_groups[0]) / nb_pts, 2 ) }")
+
+            if VERBOSE:
+                print(f"Même nombre d'aiguilles pour tous les groupes : {nb_pts} aiguilles")
+        
+        else:
+            num_groupe = int(num_groupe)
+            self.nb_pts_per_group[int(num_groupe)] = nb_pts
+            self.print_nb_pts_per_group.configure(text=f"{ round( float(self.lgs_groups[num_groupe]) / nb_pts, 2 ) }")
+
+            if VERBOSE:
+                print(f"Nombre d'aiguilles pour groupe {num_groupe} : {nb_pts} aiguilles")
 
 # Launch the app
 Application(tk.Tk(), "Interface tricotissage")
