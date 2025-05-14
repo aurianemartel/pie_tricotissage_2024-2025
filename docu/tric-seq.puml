@@ -1,9 +1,12 @@
-@startuml
+@startuml "tric-seq"
+
+title Des positions vers les instructions, première version
+
 skinparam responseMessageBelowArrow true
 skinparam sequenceMessageAlign center
 
 participant tricotissage as tric
-database "fichier \npatron" as yaml
+database "fichier \nyaml" as yaml
 database "instructions \ngcode" as gcode
 
 == Loading data ==

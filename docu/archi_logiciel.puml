@@ -1,0 +1,67 @@
+@startuml "Architecture fonctionnelle"
+
+title "Architecture Fonctionnelle"
+
+' <style>
+'     element {
+'         FontSize: 24;
+'     }
+' </style>
+
+package "Du dessin au points" as ddap {
+    rectangle "Détection \ntracé" as e1
+    rectangle "Position \naiguilles" as e2
+}
+
+
+package "Des points au tracé" as dpat {
+    rectangle "Marquage"
+    rectangle "Tricotissage"
+    "Marquage" -[hidden]-> "Tricotissage"
+}
+
+
+Actor Utilisateur
+file Dessin 
+
+
+rectangle "Interface utilisateur" as ui {
+    rectangle  "Choix image" as ui1
+    rectangle "Choix offset, zoom,\nnombre points/groupe" as ui2
+    rectangle "Choix liens (entre quels\ngroupes tricotisser)" as ui3
+    rectangle "Validation" as ui4
+    ui1 -> ui2
+    ui2 -> ui3
+    ui3 -> ui4
+}
+
+file Yaml
+
+Dessin --> ui1
+e1 -> e2
+e2 -right-> Yaml
+ddap -[hidden]> Yaml
+
+
+ddap -[hidden]> dpat
+
+hide dummy1
+
+
+Utilisateur --> ui
+
+ui1 ..> e1
+ui2 ..> e2
+ui3 ..> Yaml
+ui4 ..> "Marquage"
+ui4 .right.> "Tricotissage"
+
+Yaml -right-> dpat 
+file "gcode de marquage"
+Marquage -> "gcode de marquage"
+
+file "gcode de tricotissage"
+"Tricotissage" -> "gcode de tricotissage"
+
+
+@enduml
