@@ -58,12 +58,13 @@ class Application:
         window.grid_columnconfigure(3, weight=1)
         window.grid_columnconfigure(4, weight=1)
         window.grid_columnconfigure(5, weight=1)
+        window.grid_columnconfigure(6, weight=1)
 
         self.button_dict = {"width":20, "height":1, "font": ("Arial", 10, "normal")}
         self.text_dict = {"font": ("Arial", 10, "normal")}
         self.grid_dict = {"padx":5, "pady":10}
 
-        tk.Label(text="Tricotissage", font=("Arial", 20,"bold")).grid(row=0,column=0,columnspan=3)
+        tk.Label(text="Tricotissage", font=("Arial", 20,"bold")).grid(row=0,column=0,columnspan=7)
 
         # Chargement image et detection des tracés : affichage de départ
 
@@ -106,7 +107,7 @@ class Application:
         if hasattr(self, 'Erreur_nom_projet'): # Teste si c'est affighé
             self.Erreur_nom_projet.destroy()
 
-        ttk.Separator(self.window,orient='horizontal').grid(row=2, column=0, columnspan=3, sticky="ew")
+        ttk.Separator(self.window,orient='horizontal').grid(row=2, column=0, columnspan=3, sticky="ew", pady=5)
 
         # Détection du tracé
         lx, ly, self.lgs_groups, self.pmpg = detection_trace(self.file_path, epsilon=0.01, 
@@ -142,7 +143,7 @@ class Application:
                                  length=self.canvas_width, orient="horizontal")
         self.offset_y.grid(row=6, column=1, columnspan=2)
 
-        ttk.Separator(self.window,orient='horizontal').grid(row=7, column=0, columnspan=3, sticky="ew")
+        ttk.Separator(self.window,orient='horizontal').grid(row=7, column=0, columnspan=3, sticky="ew", pady=5)
 
         # Choix du nombre de point par groupe et validation
         self.nb_groupes = len(self.pmpg)
@@ -152,8 +153,8 @@ class Application:
         # self.pts_per_group_entry = tk.Entry(self.window)
         # self.pts_per_group_entry.grid(row=8, column=1)
         
-        tk.Label(self.window, text="Groupe : ", **self.text_dict, justify='right').grid(row=8, column=1, pady=5)
-        ids_groupes = list(range(self.nb_groupes)) + ["Tous"]
+        tk.Label(self.window, text="Groupe : ", **self.text_dict, justify='right').grid(row=8, column=1, pady=5, sticky="e")
+        ids_groupes = list(range(1, self.nb_groupes+1)) + ["Tous"]
         self.cb_choix_groupe = ttk.Combobox(self.window, values=ids_groupes)
         self.cb_choix_groupe.grid(row=8, column=2, pady=5)
 
@@ -175,6 +176,7 @@ class Application:
         # TODO : vérifier validité des valeurs min et max pour x et y
         # TODO : vérifier que tous les groupes ont un nombre d'aiguilles fixé
 
+        # Plus à jour...
         # On vérifie qu'il y a un nombre de points par groupe fixé
         # pts_per_group = self.pts_per_group_entry.get()
         # if not pts_per_group:
@@ -185,13 +187,17 @@ class Application:
         # if hasattr(self, 'Erreur_pts_per_group'):
         #     self.Erreur_pts_per_group.destroy()
 
+        # Séparation entre parties gauche et droite
+        ttk.Separator(self.window,orient='vertical').grid(row=1, column=3, rowspan=10, sticky="sn", padx=10)
+
         # Mise en place du canvas pour l'affichage des points générés
         self.canvas_plot = tk.Canvas(self.window, width=self.canvas_width, height=self.canvas_height)
-        self.canvas_plot.grid(row=1, column=3, columnspan=3, **self.grid_dict)
+        self.canvas_plot.grid(row=1, column=4, columnspan=3, **self.grid_dict)
 
         # nb_pts_per_group = [int(pts_per_group) for i in range(self.nb_groupes)]
 
         # Génération des points où seront les aiguilles         (apg = aiguilles_par_groupe)
+
         # TODO : generer_pos_aiguilles fait de l'effet de bord sur son premier argument, à corriger 
         # (il faut faire la copie dans la fonction et ne pas avoir à la faire en dehors)
         pmpg_bis = self.pmpg.copy()
@@ -203,32 +209,57 @@ class Application:
         if VERBOSE:
             print(f"Points déterminés, apg : {self.apg}")
         
-        # TODO : édition du nombre de points par groupe, par groupe séparé avec affichage distance min points
+        # Gestion des liens 
+        self.liste_liens = []
+
+        tk.Label(self.window, text="Groupes tricotissés entre eux", 
+                 font=("Arial", 12, "bold")).grid(row=2, column=4, columnspan=3, pady=5, padx=5)
+        self.cell_liens = tk.Frame(self.window, **self.grid_dict)
+        self.cell_liens.grid(row=3, column=4, columnspan=3, pady=5, padx=20, sticky="nesw")
+        #self.print_liste_liens = tk.Label(self.window, text="", justify='left', **self.text_dict)
+        #self.print_liste_liens.grid(row=3, column=4, columnspan=3, pady=5, padx=20, sticky="nesw")
+
+        tk.Label(self.window, text="Ajouter deux groupes à tricotisser", 
+                 font=("Arial", 12, "bold")).grid(row=4, column=4, columnspan=3, pady=5, padx=20)
+        ids_groupes = list(range(1, self.nb_groupes+1))
+        self.cb_choix_lien_1 = ttk.Combobox(self.window, values=ids_groupes, width=10)
+        self.cb_choix_lien_1.grid(row=5, column=4, pady=5)
+        self.cb_choix_lien_2 = ttk.Combobox(self.window, values=ids_groupes, width=10)
+        self.cb_choix_lien_2.grid(row=5, column=5, pady=5)
+        tk.Button(self.window, text="Ajouter", command=self.ajouter_lien, 
+                  **self.button_dict).grid(row=5, column=6)
 
         if len(self.apg) == 2 :
+            self.liste_liens.append(["groupe1", "groupe2"])
+            #self.print_liste_liens.configure(text="- groupe1 et groupe2")
+            tk.Label(self.cell_liens, text="- groupe 1 et groupe 2", justify='left', **self.text_dict).pack(anchor='w')
             self.run_to_yaml()
-        else:
-            # Boutton de création du fichier yaml
-            tk.Button(self.window,text="Création yaml", command=self.run_to_yaml, **self.button_dict).grid(row=2, column=5, padx=10)
+
+        # TODO : plus de deux groupes : selection de liens
+        
+        # Boutton de création du fichier yaml
+        tk.Button(self.window,text="Création yaml", command=self.run_to_yaml, **self.button_dict).grid(row=6, column=6, padx=10)
 
 
     def run_to_yaml(self):
         # Création du yaml
-        if len(self.apg) == 2:
-            # Premier cas : lien par défaut
-            group_data = {
-                "groupe1": self.apg[0],
-                "groupe2": self.apg[1],
-            }
-            link_data = [["groupe1", "groupe2"]]        
+        # if len(self.apg) == 2:
+        #     # Premier cas : lien par défaut
+        #     group_data = {
+        #         "groupe1": self.apg[0],
+        #         "groupe2": self.apg[1],
+        #     }
+        #     link_data = [["groupe1", "groupe2"]]        
         
-        # TODO : plus de deux groupes : selection de liens
+        group_data = {f"groupe{i+1}": self.apg[i] for i in range(self.nb_groupes)}        
         self.yaml_filename = PATH_YAML + self.nom_projet + ".yaml"
 
-        # TODO : récupérer epsilon lors de la génération des positions d'aiguilles ?
-        create_yaml_file(self.nom_projet, DIM_MAX_Y, DIM_MAX_Z, link_data, group_data, self.yaml_filename)
+        create_yaml_file(self.nom_projet, DIM_MAX_Y, DIM_MAX_Z, self.liste_liens, group_data, self.yaml_filename)
+        
         if VERBOSE:
             print(f"Fichier YAML généré : {self.yaml_filename}")
+
+        # TODO : affichage in-app du fichier généré
 
         # Affichage boutons de génération d'instructions
         self.show_buttons_gcode()
@@ -238,12 +269,12 @@ class Application:
         # Génération des Gcodes
         tk.Button(self.window, text="Générer Gcode marquage", 
                   command=lambda: self.create_file(marquage), 
-                  **self.button_dict).grid(row=10,column=4,pady=5)
+                  **self.button_dict).grid(row=10,column=4,pady=5, columnspan=2)
         tk.Button(self.window, text="Générer Gcode tricotissage", 
                   command=lambda: self.create_file(tricotissage), 
-                  **self.button_dict).grid(row=10,column=5,pady=5)
+                  **self.button_dict).grid(row=10,column=6,pady=5)
         self.message = tk.Label(self.window, text="", fg="green")
-        self.message.grid(row=11,column=3,columnspan=3,pady=5)
+        self.message.grid(row=11,column=4,columnspan=3,pady=5)
 
 
     # Fonctions auxiliaires
@@ -371,12 +402,23 @@ class Application:
                 print(f"Même nombre d'aiguilles pour tous les groupes : {nb_pts} aiguilles")
         
         else:
-            num_groupe = int(num_groupe)
+            num_groupe = int(num_groupe)-1
             self.nb_pts_per_group[int(num_groupe)] = nb_pts
             self.print_nb_pts_per_group.configure(text=f"{ round( float(self.lgs_groups[num_groupe]) / nb_pts, 2 ) }")
 
             if VERBOSE:
                 print(f"Nombre d'aiguilles pour groupe {num_groupe} : {nb_pts} aiguilles")
+    
+    def ajouter_lien(self):
+        groupe_fst = int(self.cb_choix_lien_1.get())
+        groupe_snd = int(self.cb_choix_lien_2.get())
+
+        # TODO : message d'erreur si pas valide (une boîte vide ou égales)
+
+        self.liste_liens.append([f"groupe{groupe_fst}", f"groupe{groupe_snd}"])
+        # self.print_liste_liens.configure(text=f"- groupe{groupe_fst} et groupe{groupe_snd}")
+        tk.Label(self.cell_liens, text=f"- groupe {groupe_fst} et groupe {groupe_snd}", justify='left', 
+                 **self.text_dict).pack(anchor='w')
 
 # Launch the app
 Application(tk.Tk(), "Interface tricotissage")
