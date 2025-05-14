@@ -7,13 +7,14 @@ import sys
 
 sys.path.append('../pts2gcode')
 from marq_tric import tricotissage, marquage
+from marq_tric import OFFSET_Y as OFFSET_Y_BUSE
+from marq_tric import OFFSET_Z as OFFSET_Z_BUSE
 from to_yaml import create_yaml_file
 
 sys.path.append('../detpts')
 from det_trace import detection_trace
 from generer_pos_aig import generer_pos_aiguilles
 
-# TODO Mettre variables globales dans fichier séparé avec package dotenv
 PATH_YAML = "../yaml_files/"
 PATH_OUT = "../prgs_gcode/"
 PATH_FIGURES = "../figures/"
@@ -28,7 +29,7 @@ MAX_PTS_PER_GROUP = 100
 DIM_MAX_Y = 350
 DIM_MAX_Z = 600
 
-DEFAULT_PROJECT_NAME = "Test"
+DEFAULT_PROJECT_NAME = "Nom_Projet"
 EPSILON_MAX = 40
 
 VERBOSE = True  # Affichages terminal de commande
@@ -39,26 +40,10 @@ class Application:
         self.window.title(window_title)
 
         # Configuration de l'affichage
-        # TODO : boucles for
-        window.grid_rowconfigure(0, weight=1)
-        window.grid_rowconfigure(1, weight=1)
-        window.grid_rowconfigure(2, weight=1)
-        window.grid_rowconfigure(3, weight=1)
-        window.grid_rowconfigure(4, weight=1)
-        window.grid_rowconfigure(5, weight=1)
-        window.grid_rowconfigure(6, weight=1)
-        window.grid_rowconfigure(7, weight=1)
-        window.grid_rowconfigure(8, weight=1)
-        window.grid_rowconfigure(9, weight=1)
-        window.grid_rowconfigure(10, weight=1)
-        window.grid_rowconfigure(11, weight=1)
-        window.grid_columnconfigure(0, weight=1)
-        window.grid_columnconfigure(1, weight=1)
-        window.grid_columnconfigure(2, weight=1)
-        window.grid_columnconfigure(3, weight=1)
-        window.grid_columnconfigure(4, weight=1)
-        window.grid_columnconfigure(5, weight=1)
-        window.grid_columnconfigure(6, weight=1)
+        for i in range(12):
+            window.grid_rowconfigure(i, weight=1)
+        for i in range(7):
+            window.grid_columnconfigure(i, weight=1)
 
         self.button_dict = {"width":20, "height":1, "font": ("Arial", 10, "normal")}
         self.text_dict = {"font": ("Arial", 10, "normal")}
@@ -95,18 +80,28 @@ class Application:
     # Fonctions du parcours utilisateur
 
     def run_detection_trace(self):
-        # Gestion nom du projet : obligatoire pour passer à la suite
+        # Gestion nom du projet et image : obligatoires pour passer à la suite
         self.nom_projet = self.nom_projet_entry.get()
+
         if not self.nom_projet:
-            self.Erreur_nom_projet = tk.Label(text="Veuillez entrer un nom de projet", fg="red")
-            self.Erreur_nom_projet.grid(row=2, column=0, columnspan=3)
+            if not hasattr(self, 'Erreur_nom_projet'):
+                self.Erreur_nom_projet = tk.Label(text="Veuillez entrer un nom de projet", fg="red")
+                self.Erreur_nom_projet.grid(row=2, column=0, columnspan=3)
             return
         
-        # TODO : vérification qu'une image a été choisie
-        
-        if hasattr(self, 'Erreur_nom_projet'): # Teste si c'est affighé
+        if hasattr(self, 'Erreur_nom_projet'): # Teste si c'est affiché
             self.Erreur_nom_projet.destroy()
 
+
+        if (not hasattr(self, 'file_path')) or (not self.file_path):
+            if not hasattr(self, 'Erreur_image'):
+                self.Erreur_image = tk.Label(text="Veuillez choisir une image", fg="red")
+                self.Erreur_image.grid(row=2, column=0, columnspan=3)
+            return 
+
+        if hasattr(self, 'Erreur_image'):
+            self.Erreur_image.destroy()
+        
         ttk.Separator(self.window,orient='horizontal').grid(row=2, column=0, columnspan=3, sticky="ew", pady=5)
 
         # Détection du tracé
@@ -150,8 +145,6 @@ class Application:
         self.nb_pts_per_group = [-1] * self.nb_groupes
 
         tk.Label(self.window, text="Nombre d'aiguilles par groupe", **self.text_dict).grid(row=8, column=0, pady=5)
-        # self.pts_per_group_entry = tk.Entry(self.window)
-        # self.pts_per_group_entry.grid(row=8, column=1)
         
         tk.Label(self.window, text="Groupe : ", **self.text_dict, justify='right').grid(row=8, column=1, pady=5, sticky="e")
         ids_groupes = list(range(1, self.nb_groupes+1)) + ["Tous"]
@@ -167,26 +160,44 @@ class Application:
         self.print_nb_pts_per_group = tk.Label(self.window, text="", **self.text_dict)
         self.print_nb_pts_per_group.grid(row=10, column=1, pady=5)
 
-        tk.Button(self.window,text="Déterminer positions", command=self.run_generer_pose_aiguilles, 
+        tk.Button(self.window,text="Déterminer positions", command=self.run_generer_pos_aiguilles, 
                   **self.button_dict).grid(row=10, column=2)
 
     
-    def run_generer_pose_aiguilles(self):
-        # TODO : ajouter séparation entre partie droite et gauche de l'app
-        # TODO : vérifier validité des valeurs min et max pour x et y
-        # TODO : vérifier que tous les groupes ont un nombre d'aiguilles fixé
+    def run_generer_pos_aiguilles(self):
 
-        # Plus à jour...
-        # On vérifie qu'il y a un nombre de points par groupe fixé
-        # pts_per_group = self.pts_per_group_entry.get()
-        # if not pts_per_group:
-        #     self.Erreur_pts_per_group = tk.Label(text="Veuillez choisir un nombre de points par groupe", fg="red")
-        #     self.Erreur_pts_per_group.grid(row=9, column=0, columnspan=3)
-        #     return
+        zoom = float(self.zoom.get())
+        offset_x = float(self.offset_x.get())
+        offset_y = float(self.offset_y.get())
+
+        x_min, x_max, y_min, y_max = self.xy_span
+        x_min = zoom*x_min + offset_x
+        x_max = zoom*x_max + offset_x
+        y_min = zoom*y_min + offset_y
+        y_max = zoom*y_max + offset_y
+
+        # On vérifie validité des valeurs présentes en x et y
+        if (x_min < max(OFFSET_Z_BUSE, 0)) or (y_min < max(OFFSET_Y_BUSE, 0)) \
+        or (x_max>DIM_MAX_Z+OFFSET_Z_BUSE) or (y_max>DIM_MAX_Y+OFFSET_Y_BUSE):
+            if not hasattr(self, 'Erreur_dims'):
+                self.Erreur_dims = tk.Label(text=
+"""Présence de valeurs non valables en x ou y,
+attention aux dimensions max et à l'offset dû au décalage feutre - buse""", fg="red")
+                self.Erreur_dims.grid(row=11, column=0, columnspan=3)
+            return
         
-        # if hasattr(self, 'Erreur_pts_per_group'):
-        #     self.Erreur_pts_per_group.destroy()
+        if hasattr(self, 'Erreur_dims'):
+            self.Erreur_dims.destroy()
+        
+        if hasattr(self, 'Erreur_pts_per_group'):
+            self.Erreur_pts_per_group.destroy()
 
+        for i in range(self.nb_groupes):
+            if self.nb_pts_per_group[i]<2:
+                self.Erreur_pts_per_group = tk.Label(text=f"Le nombre d'aiguilles du groupe {i+1} doit être supérieur ou égal à 2", fg="red")
+                self.Erreur_pts_per_group.grid(row=11, column=0, columnspan=3)
+                return
+        
         # Séparation entre parties gauche et droite
         ttk.Separator(self.window,orient='vertical').grid(row=1, column=3, rowspan=10, sticky="sn", padx=10)
 
@@ -194,12 +205,9 @@ class Application:
         self.canvas_plot = tk.Canvas(self.window, width=self.canvas_width, height=self.canvas_height)
         self.canvas_plot.grid(row=1, column=4, columnspan=3, **self.grid_dict)
 
-        # nb_pts_per_group = [int(pts_per_group) for i in range(self.nb_groupes)]
 
         # Génération des points où seront les aiguilles         (apg = aiguilles_par_groupe)
 
-        # TODO : generer_pos_aiguilles fait de l'effet de bord sur son premier argument, à corriger 
-        # (il faut faire la copie dans la fonction et ne pas avoir à la faire en dehors)
         pmpg_bis = self.pmpg.copy()
         apg_array, lg_min = generer_pos_aiguilles(pmpg_bis, float(self.zoom.get()), float(self.offset_x.get()), 
                                         float(self.offset_y.get()), self.nb_pts_per_group, self.nom_projet)
@@ -216,8 +224,6 @@ class Application:
                  font=("Arial", 12, "bold")).grid(row=2, column=4, columnspan=3, pady=5, padx=5)
         self.cell_liens = tk.Frame(self.window, **self.grid_dict)
         self.cell_liens.grid(row=3, column=4, columnspan=3, pady=5, padx=20, sticky="nesw")
-        #self.print_liste_liens = tk.Label(self.window, text="", justify='left', **self.text_dict)
-        #self.print_liste_liens.grid(row=3, column=4, columnspan=3, pady=5, padx=20, sticky="nesw")
 
         tk.Label(self.window, text="Ajouter deux groupes à tricotisser", 
                  font=("Arial", 12, "bold")).grid(row=4, column=4, columnspan=3, pady=5, padx=20)
@@ -234,22 +240,22 @@ class Application:
             #self.print_liste_liens.configure(text="- groupe1 et groupe2")
             tk.Label(self.cell_liens, text="- groupe 1 et groupe 2", justify='left', **self.text_dict).pack(anchor='w')
             self.run_to_yaml()
-
-        # TODO : plus de deux groupes : selection de liens
         
         # Boutton de création du fichier yaml
         tk.Button(self.window,text="Création yaml", command=self.run_to_yaml, **self.button_dict).grid(row=6, column=6, padx=10)
 
 
     def run_to_yaml(self):
-        # Création du yaml
-        # if len(self.apg) == 2:
-        #     # Premier cas : lien par défaut
-        #     group_data = {
-        #         "groupe1": self.apg[0],
-        #         "groupe2": self.apg[1],
-        #     }
-        #     link_data = [["groupe1", "groupe2"]]        
+        # Création du yaml  
+
+        if len(self.liste_liens) == 0:
+            if not hasattr(self, 'Erreur_liste_liens_vide'):
+                self.Erreur_liste_liens_vide = tk.Label(text="Pas de tricotissage prévu", fg="red")
+                self.Erreur_liste_liens_vide.grid(row=7, column=4, columnspan=3)
+            return
+        
+        if hasattr(self, 'Erreur_liste_liens_vide'):
+            self.Erreur_liste_liens_vide.destroy()
         
         group_data = {f"groupe{i+1}": self.apg[i] for i in range(self.nb_groupes)}        
         self.yaml_filename = PATH_YAML + self.nom_projet + ".yaml"
@@ -259,7 +265,7 @@ class Application:
         if VERBOSE:
             print(f"Fichier YAML généré : {self.yaml_filename}")
 
-        # TODO : affichage in-app du fichier généré
+        tk.Label(text=f"Fichier {self.yaml_filename} généré avec succès", fg="green").grid(row=7, column=4, columnspan=3)
 
         # Affichage boutons de génération d'instructions
         self.show_buttons_gcode()
@@ -284,8 +290,6 @@ class Application:
         self.message.config(text=f"{result}", fg="green")
         if VERBOSE:
             print(result)
-        # TODO : effacer message si une autre fonction est déclenchée
-
 
     def load_image(self):
         self.file_path = filedialog.askopenfilename()
@@ -410,10 +414,19 @@ class Application:
                 print(f"Nombre d'aiguilles pour groupe {num_groupe} : {nb_pts} aiguilles")
     
     def ajouter_lien(self):
-        groupe_fst = int(self.cb_choix_lien_1.get())
-        groupe_snd = int(self.cb_choix_lien_2.get())
+        groupe_fst = self.cb_choix_lien_1.get()
+        groupe_snd = self.cb_choix_lien_2.get()
 
-        # TODO : message d'erreur si pas valide (une boîte vide ou égales)
+        if hasattr(self, 'Erreur_mauvais_lien'):
+            self.Erreur_mauvais_lien.destroy()
+        
+        if (not groupe_fst) or (not groupe_snd) or (groupe_fst == groupe_snd):
+            self.Erreur_mauvais_lien = tk.Label(text="Lien non valide", fg="red")
+            self.Erreur_mauvais_lien.grid(row=7, column=4, columnspan=3)
+            return
+
+        groupe_fst = int(groupe_fst)
+        groupe_snd = int(groupe_snd)
 
         self.liste_liens.append([f"groupe{groupe_fst}", f"groupe{groupe_snd}"])
         # self.print_liste_liens.configure(text=f"- groupe{groupe_fst} et groupe{groupe_snd}")
