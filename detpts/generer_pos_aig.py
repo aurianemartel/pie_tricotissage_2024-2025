@@ -1,7 +1,6 @@
 """Etant donnée les différents groupes approximés par des droites par morceaux et le nombre d'aiguilles pour chacun
 des groupes, ainsi que des paramètres pour rescale la figure, renvoie la position des aiguilles"""
 
-"""REGARDER raffiner_approx_affine2"""
 import numpy as np
 from auxiliaires import longueur_approx_morceaux
 from auxiliaires import afficher_points
@@ -116,7 +115,7 @@ def afficher_aiguilles(aiguilles_par_gpe, filename="figure.png"):
 def generer_pos_aiguilles(points_morceaux_par_gpe, scale_factor, offset_x, offset_y, n, filename, afficher_points_pre_scale=False, seuil=50):
     """
     Entrée :
-        -points_morceaux_par_gpe : output de elodie1 : coordonnées des points de l'approximation du contour en
+        -points_morceaux_par_gpe : output de det_trace : coordonnées des points de l'approximation du contour en
             droite par morceaux
         -scale_factor : facteur de zoom de la figure
             Exemple : scale factor = 2 donnera des points deux fois plus espacés
