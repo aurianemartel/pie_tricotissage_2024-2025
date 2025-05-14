@@ -16,7 +16,7 @@ def longueur_approx_morceaux(points):
 
 def afficher_points(points_par_gpe):
     """
-    Permet d'afficher l'output d'elodie1
+    Permet d'afficher l'output de det_trace
     """
     for i_gpe in range(len(points_par_gpe)):
         for point in points_par_gpe[i_gpe]:

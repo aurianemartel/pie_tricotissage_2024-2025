@@ -1,6 +1,6 @@
 # PIE Tricotissage 2024-2025
 
-<img src="images/machine.jpg" alt="machine" width="400"/>
+<img src="images/machine.jpg" alt="machine" width="500"/>
 
 #### Membres de l'équipe 
 
