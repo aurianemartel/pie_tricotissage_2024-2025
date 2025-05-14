@@ -32,7 +32,7 @@ DIM_MAX_Z = 600
 DEFAULT_PROJECT_NAME = "Nom_Projet"
 EPSILON_MAX = 40
 
-VERBOSE = True  # Affichages terminal de commande
+VERBOSE = False  # Affichages terminal de commande
 
 class Application:
     def __init__(self, window, window_title):
