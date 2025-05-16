@@ -26,8 +26,8 @@ MAX_OFFSETX_RATE = 1
 MAX_OFFSETY_RATE = 1
 MAX_PTS_PER_GROUP = 100
 
-DIM_MAX_Y = 350
-DIM_MAX_Z = 600
+DIM_MAX_Y = 354
+DIM_MAX_Z = 674
 
 DEFAULT_PROJECT_NAME = "Nom_Projet"
 EPSILON_MAX = 40
@@ -400,7 +400,7 @@ attention aux dimensions max et à l'offset dû au décalage feutre - buse""", f
         if num_groupe == "Tous":
             for i in range(self.nb_groupes):
                 self.nb_pts_per_group[i] = nb_pts
-            self.print_nb_pts_per_group.configure(text=f"{ round( float(self.lgs_groups[0]) / nb_pts, 2 ) }")
+            self.print_nb_pts_per_group.configure(text=f"{ round( self.zoom.get() * float(self.lgs_groups[0]) / (nb_pts-1), 2 ) }")
 
             if VERBOSE:
                 print(f"Même nombre d'aiguilles pour tous les groupes : {nb_pts} aiguilles")
@@ -408,7 +408,7 @@ attention aux dimensions max et à l'offset dû au décalage feutre - buse""", f
         else:
             num_groupe = int(num_groupe)-1
             self.nb_pts_per_group[int(num_groupe)] = nb_pts
-            self.print_nb_pts_per_group.configure(text=f"{ round( float(self.lgs_groups[num_groupe]) / nb_pts, 2 ) }")
+            self.print_nb_pts_per_group.configure(text=f"{ round( self.zoom.get() * float(self.lgs_groups[num_groupe]) / (nb_pts-1), 2 ) }")
 
             if VERBOSE:
                 print(f"Nombre d'aiguilles pour groupe {num_groupe} : {nb_pts} aiguilles")
